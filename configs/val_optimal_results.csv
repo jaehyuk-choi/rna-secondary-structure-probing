@@ -1,0 +1,11 @@
+Backend,Model,Val_opt_alpha,Val_F1,TS0_F1_at_opt,NEW_F1_at_opt
+ViennaRNA,ernie,1.9,0.6369,0.5891,0.625
+ViennaRNA,roberta,0.3,0.5673,0.5391,0.6159
+ViennaRNA,rnafm,1.22,0.6058,0.5517,0.5796
+ViennaRNA,rinalmo,0.0,0.5461,0.5438,0.6296
+ViennaRNA,onehot,0.26,0.5603,0.5363,0.6165
+Contrafold,ernie,1.96,0.6792,,0.6525
+Contrafold,roberta,0.72,0.6075,,0.6426
+Contrafold,rnafm,1.12,0.6255,,0.6255
+Contrafold,rinalmo,0.42,0.5885,,0.6504
+Contrafold,onehot,0.84,0.5725,,0.6363

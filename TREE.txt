@@ -1,0 +1,149 @@
+dissertation_submission_claude/
+├── README.md
+├── MANIFEST.md
+├── TREE.txt
+├── RESULTS_TRACEABILITY.md
+├── FILE_SELECTION_DECISIONS.md
+├── EXCLUDED_OR_SUPERSEDED.md
+├── REVIEW_NOTES.md
+│
+├── dissertation/
+│   ├── skeleton.tex                          # Main LaTeX source
+│   └── EXPERIMENTAL_WORKFLOW.md              # Experimental workflow documentation
+│
+├── code/
+│   ├── models/
+│   │   └── bilinear_probe_model.py           # Low-rank bilinear probe model definition
+│   ├── preprocessing/
+│   │   ├── compute_structure_features.py     # Contact map / structure feature computation
+│   │   └── plot_bprna_length_boxplot.py      # bpRNA dataset length distribution plot
+│   ├── probe_training/
+│   │   └── run_split_pipeline.py             # Main probe training pipeline (train/val/test splits)
+│   ├── probe_inference/
+│   │   ├── generate_base_pairs.py            # Generate base pair predictions from probe scores
+│   │   └── generate_vl0_base_pairs.py        # Generate VL0 base pairs for CPLfold integration
+│   ├── evaluation/
+│   │   ├── evaluate_predictions.py           # Evaluate predicted structures (F1, precision, recall)
+│   │   ├── compute_feb8_probe_only_metrics.py# Compute probe-only metrics across models
+│   │   ├── compute_probe_only_with_wobble.py # Probe-only evaluation with wobble pair support
+│   │   ├── select_unconstrained_best_config.py # Select best unconstrained configuration
+│   │   └── build_summary_table.py            # Build summary tables from results
+│   ├── folding_integration/
+│   │   ├── CPLfold_inter.py                  # CPLfold integration (external, ViennaRNA/CONTRAfold)
+│   │   ├── base_pair.txt                     # Base pair definitions for CPLfold
+│   │   ├── README.md                         # CPLfold documentation
+│   │   ├── run_cplfold_exp.py                # Run CPLfold experiments with probe priors
+│   │   ├── generate_thresholded_base_pairs.py# Generate thresholded base pairs for CPLfold
+│   │   ├── aggregate_cplfold_val_ts0_new.py  # Aggregate CPLfold results across splits
+│   │   └── Utils/                            # CPLfold energy/feature utilities
+│   │       ├── __init__.py
+│   │       ├── energy_parameter.py
+│   │       ├── feature_weight.py
+│   │       ├── intl11.py
+│   │       ├── intl21.py
+│   │       ├── intl22.py
+│   │       ├── shared.py
+│   │       └── utility_v.py
+│   ├── analysis/
+│   │   ├── build_canonical_rate_table_with_baseline.py  # Canonical pairing rate computation
+│   │   ├── compute_seq_f1_and_gt.py          # Per-sequence F1 and ground truth
+│   │   ├── compute_wc_gu_rate_all_pairs.py   # Watson-Crick/wobble rate computation
+│   │   ├── onehot_pair_combo_distribution.py # Pair-type distribution analysis
+│   │   ├── roberta_vs_others_statistical_test.py # Paired significance tests
+│   │   ├── compare_alpha0_vs_best.py         # Compare alpha=0 vs best alpha
+│   │   ├── alpha0_vs_best_stats.py           # Statistical summary of alpha comparison
+│   │   ├── aggregate_results.py              # Aggregate CPLfold results
+│   │   └── analyze_by_length.py              # Length-stratified performance analysis
+│   ├── plotting/
+│   │   ├── plot_probe_comparison_grouped_bar.py   # Fig: grouped bar (unconstrained vs best)
+│   │   ├── plot_f1_by_length_boxplot.py           # Fig: F1 by sequence length boxplot
+│   │   ├── plot_layer_wise_val_f1.py              # Fig: layer-wise validation F1
+│   │   ├── plot_k_comparison_by_model.py          # Fig: probe rank k comparison
+│   │   ├── plot_vl0_threshold_sweep.py            # Fig: threshold sweep on VL0
+│   │   ├── plot_vl0_alpha_sweep.py                # Fig: alpha sweep (ViennaRNA/CONTRAfold)
+│   │   ├── plot_probe_contact_heatmaps.py         # Fig: probe contact heatmaps
+│   │   ├── plot_probe_only.py                     # Fig: probe-only results
+│   │   ├── plot_pair_combo_distribution.py        # Fig: pair combo distribution
+│   │   └── plot_alpha0_vs_best.py                 # Fig: alpha=0 vs best comparison
+│   ├── utils/
+│   │   └── evaluation.py                     # Shared evaluation utilities
+│   └── run_sh/
+│       ├── run_all_plots.sh                  # Generate all dissertation figures
+│       └── run_probe_only.sh                 # Run probe-only evaluation pipeline
+│
+├── configs/
+│   ├── final_selected_config_unconstrained.csv  # Unconstrained best config per model
+│   ├── val_optimal_results.csv                  # Validation-optimal results (all modes)
+│   └── best_config_val_f1.csv                   # Best config by validation F1
+│
+├── results/
+│   ├── tables/
+│   │   ├── canonical_rate_table_with_baseline.csv   # Table: canonical pairing rates
+│   │   ├── canonical_rate_table_with_baseline.tex   # LaTeX version
+│   │   ├── canonical_rate_baseline_table.csv        # Baseline canonical rates
+│   │   ├── onehot_pair_combo_distribution.csv       # Table: one-hot pair distribution
+│   │   ├── rinalmo_pair_combo_distribution.csv      # Table: RiNALMo pair distribution
+│   │   ├── wc_gu_rate_all_pairs.csv                 # WC/GU rates across models
+│   │   ├── probe_heatmap_seq_f1_and_gt.txt          # Per-sequence heatmap data
+│   │   └── threshold_sweep_tables.tex               # Threshold sweep LaTeX tables
+│   ├── metrics/
+│   │   ├── final_test_metrics.csv                   # TS0 probe-only metrics (best config)
+│   │   ├── final_new_metrics.csv                    # NEW probe-only metrics (best config)
+│   │   ├── final_test_metrics_wobble.csv            # TS0 with wobble
+│   │   ├── final_new_metrics_wobble.csv             # NEW with wobble
+│   │   ├── unconstrained_results_summary.csv        # Unconstrained probe-only summary
+│   │   └── probe_unconstrained_vs_best_comparison.csv # Unc. vs best comparison
+│   ├── per_sequence/
+│   │   ├── ts_per_sequence_metrics.csv              # Per-sequence F1 on TS0
+│   │   └── new_per_sequence_metrics.csv             # Per-sequence F1 on NEW
+│   ├── statistics/
+│   │   ├── roberta_vs_others_significance.csv       # Paired significance test results
+│   │   └── roberta_vs_others_significance.md        # Significance test summary
+│   ├── sweeps/
+│   │   ├── layer_wise_val_f1.csv                    # Layer sweep validation F1
+│   │   ├── k_comparison_val_f1.csv                  # Rank k sweep validation F1
+│   │   └── vl0_alpha_sweep_both.csv                 # Alpha sweep both backends
+│   └── folding/
+│       ├── alpha0_vs_best_full.csv                  # CPLfold: alpha=0 vs best (full)
+│       ├── alpha0_vs_best_summary.csv               # CPLfold: summary
+│       ├── cplfold_summary.csv                      # CPLfold experiment summary
+│       ├── detailed_alpha_sweep_ts0_vienna.csv      # Alpha sweep: TS0 ViennaRNA
+│       ├── detailed_alpha_sweep_ts0_contrafold.csv  # Alpha sweep: TS0 CONTRAfold
+│       ├── detailed_alpha_sweep_new_vienna.csv      # Alpha sweep: NEW ViennaRNA
+│       ├── detailed_alpha_sweep_new_contrafold.csv  # Alpha sweep: NEW CONTRAfold
+│       ├── results_by_length.csv                    # CPLfold results by length
+│       └── ts0_results_summary.csv                  # TS0 folding summary
+│
+├── figures/
+│   ├── main/
+│   │   ├── bpRNA_length_boxplot.png                 # Dataset length distribution
+│   │   ├── probe_contact_heatmaps_selected_updated.png # Selected heatmaps (3 models)
+│   │   ├── fig1_grouped_bar_f1.png                  # Unc. vs best grouped bar
+│   │   ├── f1_by_length_boxplot.png                 # F1 by sequence length
+│   │   ├── layer_wise_val_f1.png                    # Layer-wise validation F1
+│   │   ├── k_comparison_val_f1_by_model.png         # Probe rank comparison
+│   │   ├── vl0_threshold_sweep.png                  # Threshold sweep
+│   │   ├── vl0_alpha_sweep_vienna.png               # Alpha sweep ViennaRNA
+│   │   └── vl0_alpha_sweep_contrafold.png           # Alpha sweep CONTRAfold
+│   └── appendix/
+│       └── probe_contact_heatmaps.png               # Full 6-model heatmaps (appendix)
+│
+├── data/
+│   ├── README.md
+│   ├── metadata/
+│   │   ├── ArchiveII.csv                            # ArchiveII RNA metadata
+│   │   └── bpRNA.csv                                # bpRNA dataset metadata
+│   └── splits/
+│       └── bpRNA_splits.csv                         # TR0/VL0/TS0/NEW split assignments
+│
+├── environment/                                     # (empty - see REVIEW_NOTES.md)
+│
+├── docs/
+│   ├── BONUS_FILES.md                               # CPLfold bonus file format
+│   ├── DATA.md                                      # Data documentation
+│   ├── FIGURES.md                                   # Figure generation guide
+│   ├── PT_AND_PROBE_STRUCTURE.md                    # Pretrained model & probe docs
+│   ├── SCRIPTS.md                                   # Script usage documentation
+│   └── STORAGE.md                                   # Storage layout documentation
+│
+└── legacy_optional/                                 # (empty - all excluded files documented)

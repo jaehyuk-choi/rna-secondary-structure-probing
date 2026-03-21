@@ -1,0 +1,13 @@
+backend,model,mean_F1_alpha0,mean_F1_best_alpha,best_alpha
+Vienna,ernie,0.5438,0.6562,1.92
+Vienna,roberta,0.5438,0.5546,0.44
+Vienna,rnafm,0.5438,0.6019,1.78
+Vienna,rinalmo,0.5438,0.5438,0.00
+Vienna,onehot,0.5438,0.5439,0.04
+Vienna,rnabert,,0.5489,0.14
+Contrafold,ernie,0.5604,0.6828,1.96
+Contrafold,roberta,0.5604,0.5868,0.56
+Contrafold,rnafm,0.5604,0.6235,1.06
+Contrafold,rinalmo,0.5604,0.5667,0.42
+Contrafold,onehot,0.5604,0.5725,0.74
+Contrafold,rnabert,,0.5790,0.56

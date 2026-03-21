@@ -1,0 +1,7 @@
+model,selected_layer,selected_k,selected_seed,selected_best_threshold,selection_rule,selected_decoding_mode
+ernie,11,32,42,0.95,max_val_f1_unconstrained,unconstrained
+roberta,11,32,42,0.9,max_val_f1_unconstrained,unconstrained
+rnafm,11,32,42,0.9,max_val_f1_unconstrained,unconstrained
+rinalmo,10,32,42,0.7,max_val_f1_unconstrained,unconstrained
+onehot,0,128,42,0.65,max_val_f1_unconstrained,unconstrained
+rnabert,0,128,42,0.65,max_val_f1_unconstrained,unconstrained

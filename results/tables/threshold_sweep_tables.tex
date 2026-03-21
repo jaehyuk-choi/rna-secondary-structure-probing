@@ -1,0 +1,42 @@
+% Table: Validation-selected threshold and metrics at τ* (VL0)
+% Use: \input{data/threshold_sweep_tables.tex} or copy into main .tex
+
+\begin{table}[htbp]
+\centering
+\caption{Validation-selected decoding threshold $\tau^*$ and pair-level metrics on VL0.
+For each model, $\tau^*$ maximizes validation F1 over $\tau \in [0.50, 0.95]$ (step 0.05).
+Precision, recall, and F1 are reported at $\tau^*$.}
+\label{tab:best_config_val}
+\begin{tabular}{lccccl}
+\toprule
+Model & $\tau^*$ & Precision & Recall & F1 & Decoding \\
+\midrule
+ERNIE & 0.90 & 0.556 & 0.619 & 0.586 & canonical\_wobble \\
+RoBERTa & 0.90 & 0.164 & 0.235 & 0.193 & canonical\_wobble \\
+RNAFM & 0.90 & 0.115 & 0.187 & 0.143 & unconstrained \\
+RiNALMo & 0.65 & 0.043 & 0.074 & 0.054 & canonical\_constrained \\
+One-hot & 0.70 & 0.026 & 0.029 & 0.028 & canonical\_constrained \\
+RNABERT & 0.65 & 0.017 & 0.066 & 0.026 & unconstrained \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% Table: Validation F1 across threshold τ
+\begin{table}[htbp]
+\centering
+\caption{Validation F1 across decoding threshold $\tau$ (VL0).
+Bold indicates the selected $\tau^*$ for each model.}
+\label{tab:threshold_sweep_f1}
+\begin{tabular}{lcccccccc}
+\toprule
+Model & $\tau{=}0.50$ & $\tau{=}0.65$ & $\tau{=}0.70$ & $\tau{=}0.80$ & $\tau{=}0.90$ & $\tau{=}0.95$ & $\tau^*$ \\
+\midrule
+ERNIE & 0.441 & 0.451 & 0.461 & 0.510 & \textbf{0.586} & 0.548 & 0.90 \\
+RoBERTa & 0.176 & 0.178 & 0.179 & 0.186 & \textbf{0.193} & 0.171 & 0.90 \\
+RNAFM & 0.104 & 0.106 & 0.109 & 0.122 & \textbf{0.143} & 0.136 & 0.90 \\
+RiNALMo & 0.051 & \textbf{0.054} & 0.051 & 0.016 & 0.000 & 0.000 & 0.65 \\
+One-hot & 0.029 & 0.029 & \textbf{0.028} & 0.000 & 0.000 & 0.000 & 0.70 \\
+RNABERT & 0.026 & \textbf{0.026} & 0.026 & 0.021 & 0.008 & 0.002 & 0.65 \\
+\bottomrule
+\end{tabular}
+\end{table}
