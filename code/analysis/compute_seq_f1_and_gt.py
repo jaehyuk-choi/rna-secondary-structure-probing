@@ -130,9 +130,9 @@ def main():
             F1, TP, FP, FN, TP_pairs, FP_pairs, FN_pairs = compute_f1_with_matches(pred_pairs, true_pairs)
 
             print(f"  {MODEL_LABELS[model]:12} | τ={tau} | F1={F1:.3f} | TP={TP} FP={FP} FN={FN} | pred={len(pred_pairs)}")
-            print(f"      TP (맞춤): {[p for p, g in TP_pairs]}")
-            print(f"      FP (잘못 예측): {FP_pairs}")
-            print(f"      FN (놓침): {FN_pairs}")
+            print(f"      TP (matched): {[p for p, g in TP_pairs]}")
+            print(f"      FP (incorrect): {FP_pairs}")
+            print(f"      FN (missed): {FN_pairs}")
             print()
         print()
 

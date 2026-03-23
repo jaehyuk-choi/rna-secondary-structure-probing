@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-표 형식: Canonical rate (WC, WC+GU) by model + Baseline.
-Baseline = 모든 후보쌍 (i<j) 중 WC/WC+GU 비율.
+Table format: canonical rate (WC, WC+GU) by model plus the all-pairs baseline.
+The baseline is the proportion of WC or WC+GU pairs among all candidate pairs with i<j.
 """
 
 import csv

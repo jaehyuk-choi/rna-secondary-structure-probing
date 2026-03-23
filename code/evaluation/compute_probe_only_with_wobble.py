@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 """
-Probe-only metrics with canonical_rate_wobble (GU/UG 포함).
+Probe-only metrics with `canonical_rate_wobble`, which includes GU and UG pairs.
 
-기존 compute_feb8_probe_only_metrics.py와 동일하지만 canonical_rate_wobble 추가.
-출력: final_test_metrics_wobble.csv, final_new_metrics_wobble.csv
-(기존 파일 덮어쓰지 않음)
+This script follows the same evaluation logic as `compute_feb8_probe_only_metrics.py`
+but adds `canonical_rate_wobble`.
+Outputs:
+- `final_test_metrics_wobble.csv`
+- `final_new_metrics_wobble.csv`
+
+The standard output files are left unchanged.
 """
 
 import argparse

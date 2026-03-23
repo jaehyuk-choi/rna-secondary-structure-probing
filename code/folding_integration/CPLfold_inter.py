@@ -2,7 +2,7 @@
 CPLfold_inter.py
 RNA Secondary Structure Prediction with Base Pair Bonus
 
-基于 LinearFold 算法，支持碱基配对 bonus 矩阵引导 RNA 二级结构预测。
+LinearFold-based RNA secondary-structure prediction with optional base-pair bonus matrices.
 
 Features:
 1. Flat 1D arrays instead of 3D (better cache locality)
@@ -56,22 +56,22 @@ from Utils.utility_v import v_init_tetra_hex_tri, NUM_TO_PAIR, NUM_TO_NUC
 @njit(cache=True, fastmath=True)
 def diagonal_smooth_matrix(matrix, n, window=2):
     """
-    对 bonus 矩阵沿对角线方向平滑
-    鼓励形成连续的茎结构
+    Smooth the bonus matrix along local anti-diagonals.
+    This favors contiguous stem-like regions.
 
     Args:
-        matrix: n x n 的扁平化矩阵 (长度 n*n)
-        n: 序列长度
-        window: 平滑窗口大小 (向上下各延伸 window 个位置)
+        matrix: flattened n x n matrix with length n*n
+        n: sequence length
+        window: smoothing window size on each side
 
     Returns:
-        smoothed: 平滑后的矩阵
+        smoothed: smoothed matrix
     """
     smoothed = np.zeros(n * n, dtype=np.float32)
 
     for i in range(n):
         for j in range(i + 4, n):  # j > i + 3 (hairpin constraint)
-            # 沿对角线收集值 (i-k, j+k) 和 (i+k, j-k)
+            # Aggregate scores along the local anti-diagonal.
             total = np.float32(0.0)
             count = 0
 
@@ -90,7 +90,7 @@ def diagonal_smooth_matrix(matrix, n, window=2):
 
 
 # Bonus mode constants
-BONUS_MODE_PAIR = 0    # 单对 bonus
+BONUS_MODE_PAIR = 0    # Single-pair bonus
 
 
 # Constants
@@ -1396,7 +1396,7 @@ class BeamCKYParserHyper:
         self._alpha = 0.0
         self._alpha_scaled = np.float32(0.0)
         self._bonus_matrix = None
-        self._raw_bonus_matrix = None  # 保存原始矩阵用于调试
+        self._raw_bonus_matrix = None  # Keep the raw matrix for debugging.
 
     def set_alpha(self, alpha):
         """Set the scaling factor for bonus."""
@@ -1405,18 +1405,18 @@ class BeamCKYParserHyper:
 
     def set_bonus_matrix(self, bonus_matrix, seq_length):
         """
-        设置 bonus 矩阵
+        Set the bonus matrix.
 
         Args:
-            bonus_matrix: n x n 的碱基配对 bonus 矩阵
-            seq_length: 序列长度
+            bonus_matrix: n x n base-pair bonus matrix
+            seq_length: sequence length
         """
         if bonus_matrix is None:
             self._bonus_matrix = np.zeros(seq_length * seq_length, dtype=np.float32)
             self._raw_bonus_matrix = None
             return
 
-        # 转换为扁平数组
+        # Flatten 2D input for the internal n*n representation.
         if bonus_matrix.ndim == 2:
             flat_matrix = bonus_matrix.flatten().astype(np.float32)
         else:
@@ -4355,15 +4355,15 @@ class BeamCKYParserHyper:
 
 def load_bonus_matrix(filepath, seq_length):
     """
-    从 base_pair.txt 文件加载 bonus 矩阵
-    文件格式: i\\tj\\tscore (1-based index)
+    Load a bonus matrix from `base_pair.txt`.
+    Expected format: `i\\tj\\tscore` with 1-based indices.
 
     Args:
-        filepath: bonus 矩阵文件路径
-        seq_length: RNA 序列长度
+        filepath: path to the bonus-matrix file
+        seq_length: RNA sequence length
 
     Returns:
-        matrix: seq_length x seq_length 的 numpy 矩阵
+        matrix: `seq_length x seq_length` NumPy matrix
     """
     matrix = np.zeros((seq_length, seq_length), dtype=np.float32)
 
@@ -4374,12 +4374,12 @@ def load_bonus_matrix(filepath, seq_length):
                 continue
             parts = line.split('\t')
             if len(parts) >= 3:
-                i = int(parts[0]) - 1  # 转换为 0-based
+                i = int(parts[0]) - 1  # Convert to 0-based indexing.
                 j = int(parts[1]) - 1
                 score = float(parts[2])
                 if 0 <= i < seq_length and 0 <= j < seq_length:
                     matrix[i, j] = score
-                    matrix[j, i] = score  # 对称
+                    matrix[j, i] = score
 
     return matrix
 
@@ -4400,15 +4400,11 @@ def main():
 
     args = parser_args.parse_args()
 
-    # 创建解析器
     parser = BeamCKYParserHyper(beam_size=args.beamsize, is_verbose=args.verbose, lv=args.V)
 
-    # 处理输入序列
     if args.seq:
-        # 从命令行参数获取序列
         sequences = [args.seq]
     else:
-        # 从 stdin 读取序列
         sequences = []
         for line in sys.stdin:
             seq = line.strip()
@@ -4419,7 +4415,6 @@ def main():
         seq = seq.upper().replace('T', 'U')
         n = len(seq)
 
-        # 加载并设置 bonus 矩阵
         # IMPORTANT: Set alpha BEFORE setting bonus matrix
         # The scoring functions use alpha_scaled, not the multiplied matrix
         parser.set_alpha(args.alpha)
@@ -4431,7 +4426,6 @@ def main():
         else:
             parser.set_bonus_matrix(None, n)
 
-        # 运行折叠
         structure, score, num_states, elapsed = parser.parse(seq)
         print(seq)
         print(f"{structure} ({score:.2f})")

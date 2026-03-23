@@ -1,78 +1,78 @@
-# 보너스 파일 생성 방법 (상세)
+# Bonus Files: Generation Details
 
-march1에서 생성되는 추가 분석/시각화 파일들의 **데이터 출처**, **계산 방식**, **실행 방법**을 정리합니다.
+This document records the data sources, computation logic, and execution steps for the additional analysis and visualization files generated in `march1`.
 
 ---
 
-## 1. RoBERTa vs Others 통계 검정
+## 1. RoBERTa vs. Others Significance Tests
 
-### 출력 파일
+### Output files
 - `figures/roberta_significance/roberta_vs_others_significance.csv`
 - `figures/roberta_significance/roberta_vs_others_significance.md`
 
-### 생성 스크립트
+### Script
 ```bash
-conda activate rna_probe   # scipy 필요
+conda activate rna_probe   # scipy required
 python march1/scripts/roberta_vs_others_statistical_test.py
 ```
 
-### 데이터 출처
-- **per-sequence F1**: `march1/data/ts_per_sequence_metrics.csv`, `march1/data/new_per_sequence_metrics.csv`
-  - 없으면 `feb8/results_updated/summary/ts_per_sequence_metrics.csv`, `new_per_sequence_metrics.csv` 사용
-- **Best config 필터**: `feb8/results_updated/summary/final_selected_config.csv`
-  - per-sequence 행 중 (model, layer, k, threshold, decoding_mode)가 Best config와 일치하는 것만 사용
+### Data sources
+- **Per-sequence F1**: `march1/data/ts_per_sequence_metrics.csv`, `march1/data/new_per_sequence_metrics.csv`
+  - If unavailable, fall back to `feb8/results_updated/summary/ts_per_sequence_metrics.csv` and `new_per_sequence_metrics.csv`
+- **Best-config filter**: `feb8/results_updated/summary/final_selected_config.csv`
+  - Keep only rows whose `(model, layer, k, threshold, decoding_mode)` match the selected configuration
 
-### 계산 방식
-1. per-sequence 파일에서 Best config에 맞는 행만 로드
-2. `seq_id` 기준으로 pivot: `{seq_id: {model: f1}}`
-3. RoBERTa vs 각 모델(ERNIE, RNAFM, RiNALMo, One-hot, RNABERT)에 대해:
-   - 같은 seq_id를 가진 sequence들의 (RoBERTa F1, other F1) 쌍 수집
-   - **Paired Wilcoxon signed-rank test** (alternative='greater'): RoBERTa > other?
-   - **Paired t-test** (alternative='greater')
-4. mean_roberta, mean_other, mean_diff, p_wilcoxon, p_ttest, sig(***/**/*) 출력
+### Computation
+1. Load only best-config rows from the per-sequence files.
+2. Pivot by `seq_id` to obtain `{seq_id: {model: f1}}`.
+3. For RoBERTa vs. each comparison model (ERNIE, RNAFM, RiNALMo, One-hot, RNABERT):
+   - collect paired `(RoBERTa F1, other F1)` values for shared `seq_id`
+   - run a paired Wilcoxon signed-rank test with `alternative='greater'`
+   - run a paired t-test with `alternative='greater'`
+4. Report `mean_roberta`, `mean_other`, `mean_diff`, `p_wilcoxon`, `p_ttest`, and `sig`
 
-### 해석
-- **p=1.0** (RoBERTa vs ERNIE): RoBERTa가 ERNIE보다 **나쁘므로** H0(RoBERTa > other) 기각 불가. 즉, RoBERTa가 유의하게 더 좋다고 할 수 없음.
-- **p≈0, sig=*****: RoBERTa가 해당 모델보다 유의하게 더 좋음 (Wilcoxon & t-test 모두 p<0.001).
+### Interpretation
+- **p=1.0** (RoBERTa vs. ERNIE): the one-sided hypothesis `RoBERTa > other` is not supported.
+- **p≈0, sig=***:** RoBERTa significantly outperforms the comparison model under both tests with `p < 0.001`.
 
-### 의존성
-- **per-sequence 데이터**: `compute_feb8_probe_only_metrics.py --per-sequence --per-sequence-dir march1/data` 로 먼저 생성 필요
-- **scipy**: p-value 계산에 필요 (없으면 p=nan)
+### Dependencies
+- **Per-sequence metrics** must be generated first with `compute_feb8_probe_only_metrics.py --per-sequence --per-sequence-dir march1/data`
+- **scipy** is required for p-value computation; otherwise p-values are written as `nan`
 
 ---
 
 ## 2. F1 by Length Boxplot
 
-### 출력 파일
+### Output file
 - `figures/length_boxplot/f1_by_length_boxplot.png`
 
-### 생성 스크립트
+### Script
 ```bash
 python march1/scripts/plot_f1_by_length_boxplot.py
 ```
 
-### 데이터 출처
-- **per-sequence F1**: `march1/data/ts_per_sequence_metrics.csv`, `new_per_sequence_metrics.csv` (또는 feb8/summary)
-- **Best config 필터**: `final_selected_config.csv`
+### Data sources
+- **Per-sequence F1**: `march1/data/ts_per_sequence_metrics.csv`, `new_per_sequence_metrics.csv` (or the corresponding `feb8/summary` files)
+- **Best-config filter**: `final_selected_config.csv`
 
-### 계산 방식
-1. per-sequence에서 Best config에 맞는 행만 로드
-2. 각 sequence의 `length`로 구간 할당:
-   - `<100`: 0 ≤ length < 100
-   - `100-200`: 100 ≤ length < 200
-   - `200-400`: 200 ≤ length < 400
-   - `400+`: length ≥ 400
-3. (partition, model, len_bin)별로 F1 리스트 수집
-4. TS0 / NEW 각각 박스플롯: x축=len_bin, y축=F1, 모델별 색상
+### Computation
+1. Keep only best-config rows from the per-sequence tables.
+2. Assign each sequence to a length bin:
+   - `<100`: `0 <= length < 100`
+   - `100-200`: `100 <= length < 200`
+   - `200-400`: `200 <= length < 400`
+   - `400+`: `length >= 400`
+3. Collect F1 values by `(partition, model, len_bin)`.
+4. Draw separate TS0 and NEW boxplots with `len_bin` on the x-axis and F1 on the y-axis.
 
-### 의존성
-- per-sequence 데이터 (Best config 기준)
+### Dependency
+- Per-sequence metrics generated under the best selected configuration
 
 ---
 
-## 3. Layer-wise & k Comparison
+## 3. Layer-wise and k Comparison
 
-### 출력 파일
+### Output files
 - `figures/layer_k_comparison/layer_wise_val_f1.png`
 - `figures/layer_k_comparison/k_comparison_val_f1.png`
 - `figures/layer_k_comparison/layer_wise_table.md`
@@ -80,91 +80,91 @@ python march1/scripts/plot_f1_by_length_boxplot.py
 - `data/layer_wise_val_f1.csv`
 - `data/k_comparison_val_f1.csv`
 
-### 생성 스크립트
+### Script
 ```bash
 python march1/scripts/plot_layer_and_k_comparison.py
 ```
-*(스크립트가 없으면 아래 로직으로 별도 구현 필요)*
+If this script is absent, the figures must be reproduced from the logic below.
 
-### 데이터 출처
+### Data sources
 - **all_runs_summary**: `feb8/results_updated/summary/all_runs_summary.csv`
-  - 각 (model, layer, k, threshold, decoding_mode) 조합의 validation F1
+  - Validation F1 for each `(model, layer, k, threshold, decoding_mode)` combination
 - **Best config**: `feb8/results_updated/summary/final_selected_config.csv`
 
-### 계산 방식
+### Computation
 
 #### Layer-wise
-- **고정**: Best config의 (k, threshold, decoding_mode)
-- **변화**: layer만 0, 1, 2, … 로 sweep
-- all_runs_summary에서 `(model, layer, best_k, best_threshold, best_decoding_mode)` 일치하는 행의 `f1` 사용
-- 결과: layer별 Val F1 (line plot)
+- Hold `(k, threshold, decoding_mode)` fixed at the best configuration.
+- Sweep only `layer`.
+- Use the `f1` value from rows matching `(model, layer, best_k, best_threshold, best_decoding_mode)`.
+- Plot validation F1 by layer.
 
 #### k comparison
-- **고정**: Best config의 (layer, threshold, decoding_mode)
-- **변화**: k만 32, 64, 128로 sweep
-- all_runs_summary에서 `(model, best_layer, k, best_threshold, best_decoding_mode)` 일치하는 행의 `f1` 사용
-- 결과: k별 Val F1 (grouped bar)
+- Hold `(layer, threshold, decoding_mode)` fixed at the best configuration.
+- Sweep `k` over `32, 64, 128`.
+- Use the `f1` value from rows matching `(model, best_layer, k, best_threshold, best_decoding_mode)`.
+- Plot validation F1 by `k`.
 
 ---
 
-## 4. Per-sequence Metrics (선행 데이터)
+## 4. Per-sequence Metrics
 
-### 출력 파일
+### Output files
 - `march1/data/ts_per_sequence_metrics.csv`
 - `march1/data/new_per_sequence_metrics.csv`
 
-### 생성 스크립트
+### Script
 ```bash
 python feb8/scripts/evaluation/compute_feb8_probe_only_metrics.py \
   --per-sequence \
   --per-sequence-dir /projects/u6cg/jay/dissertations/march1/data
 ```
 
-### 데이터 출처
+### Data sources
 - **Best config**: `feb8/results_updated/summary/final_selected_config.csv`
 - **Checkpoint**: `feb8/results_updated/outputs/{model}/layer_{layer}/k_{k}/seed_42/best.pt`
 - **Embeddings**: `data/embeddings/{model}/bpRNA/by_layer/layer_{layer}/{seq_id}.npy`
 - **Ground truth**: `data/bpRNA.csv`, `data/bpRNA_splits.csv`
 
-### 계산 방식
-1. Best config 로드 (model별 layer, k, threshold, decoding_mode)
-2. TS0 / NEW partition의 seq_id 목록 로드
-3. 각 (model, seq_id)에 대해:
-   - embedding 로드 → probe forward → threshold로 pair 예측
-   - ground truth와 비교 → sequence-level F1, precision, recall 계산
-4. (seq_id, length, f1, canonical_rate, model, layer, k, threshold, decoding_mode) 행으로 저장
-   - **canonical_rate**: 예측 pair 중 Watson–Crick (AU, CG) 비율
-   - **canonical_rate_wobble**: Watson–Crick + GU 비율 (decoding_mode가 canonical_wobble일 때)
+### Computation
+1. Load the selected `(layer, k, threshold, decoding_mode)` for each model.
+2. Load the `seq_id` lists for TS0 and NEW.
+3. For each `(model, seq_id)` pair:
+   - load embeddings
+   - run the probe
+   - decode pairs with the selected threshold
+   - compare predictions against ground truth
+4. Save rows containing `(seq_id, length, f1, canonical_rate, model, layer, k, threshold, decoding_mode)`.
 
-### 특징
-- Best config 기준으로만 계산 (다른 config sweep 없음)
-- 실행 시간: 모델 6개 × (TS0 ~1305 + NEW ~5401) sequence → 약 30–40분
-- nohup으로 백그라운드 실행 권장
+### Notes
+- Metrics are computed only for the selected configuration; no additional sweep is performed.
+- Typical runtime is roughly 30 to 40 minutes for 6 models over TS0 and NEW.
+- Background execution with `nohup` is recommended.
 
 ---
 
-## 5. 실행 순서 요약
+## 5. Recommended Execution Order
 
-```
-1. Per-sequence 생성 (최초 1회, 또는 Best config 변경 시)
+```text
+1. Generate per-sequence metrics
    python feb8/scripts/evaluation/compute_feb8_probe_only_metrics.py --per-sequence --per-sequence-dir march1/data
 
-2. RoBERTa 통계 검정
+2. Run the RoBERTa significance tests
    conda activate rna_probe
    python march1/scripts/roberta_vs_others_statistical_test.py
 
-3. 길이별 박스플롯
+3. Plot F1 by length
    python march1/scripts/plot_f1_by_length_boxplot.py
 
-4. Layer/k 비교 (plot_layer_and_k_comparison.py 존재 시)
+4. Plot layer-wise and k comparisons
    python march1/scripts/plot_layer_and_k_comparison.py
 ```
 
 ---
 
-## 6. 파일 의존성 다이어그램
+## 6. File Dependency Diagram
 
-```
+```text
 final_selected_config.csv (feb8)
         │
         ├──► all_runs_summary.csv ──► plot_layer_and_k_comparison.py ──► layer_wise_*, k_comparison_*

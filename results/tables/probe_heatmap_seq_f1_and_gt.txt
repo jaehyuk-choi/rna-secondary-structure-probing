@@ -42,10 +42,10 @@ Per-sequence F1 (τ = best config threshold, shift=1):
   One-hot      | τ=0.7 | F1=0.026 | TP=1  FP=42 FN=33 | pred=43
 
 ======================================================================
-Predicted vs Ground truth 비교 (τ로 threshold한 예측 pair 기준)
-- TP (맞춤): 예측했고 GT에 있는 pair (shift±1 매칭)
-- FP (잘못 예측): 예측했지만 GT에 없는 pair
-- FN (놓침): GT에 있지만 예측하지 못한 pair
+Predicted vs. ground truth comparison (using pairs predicted after thresholding at τ)
+- TP (matched): predicted pairs that are present in the ground truth under shift±1 matching
+- FP (incorrect): predicted pairs that are absent from the ground truth
+- FN (missed): ground-truth pairs that were not predicted
 
-재실행: conda run -n rna_probe python scripts/compute_seq_f1_and_gt.py
+Re-run: conda run -n rna_probe python scripts/compute_seq_f1_and_gt.py
 ======================================================================

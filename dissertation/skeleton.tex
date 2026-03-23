@@ -268,7 +268,6 @@ and~\ref{sec:disc_roberta}).
 This chapter provides the background and related work needed to follow the remainder of the dissertation. We begin with the structural biology of RNA base pairing, then review current approaches to RNA secondary structure prediction, including those that use RNA foundation models. We then introduce probing methods for analysing what pretrained representations encode. The chapter concludes by identifying the gaps that motivate our study.
 % ------------------------------------------------------------
 \section{RNA Secondary Structure}
-% Ver2.
 Ribonucleic acid (RNA) is a single-stranded nucleic acid composed of four nucleotides, Adenine (A), Cytosine (C), Guanine (G), and Uracil (U), and it plays a central role in biological information processing \citep{alonso2021mechanisms}. Beyond its role in storing and transmitting genetic information, RNA can also carry out molecular functions directly through its structure. As a result, RNA function is shaped not only by sequence but also by the intramolecular base-pairing interactions that gives rise to RNA secondary structure \citep{ganser2019roles, tinoco1999how}.
 \label{sec:bg_rna_fundamentals}
 \begin{wrapfigure}{r}{0.4\textwidth}
@@ -278,7 +277,6 @@ Ribonucleic acid (RNA) is a single-stranded nucleic acid composed of four nucleo
     \label{fig:rna_secondary_structure}
 \end{wrapfigure}
 
-% Ver2. 
 \textbf{Levels of RNA structure.} RNA Structure is conventionally described at three levels \citep{tinoco1999how,turner2009nndb}: \textbf{Primary}, \textbf{Secondary},
 and \textbf{Tertiary} structure. The primary structure is the linear nucleotide sequence
 $x = (x_1, \dots, x_n)$, where each $x_i \in \Sigma = \{A,C,G,U\}$. 
@@ -324,7 +322,6 @@ enforces the relevant structural constraints.
 % ------------------------------------------------------------
 \section{RNA Secondary Structure Prediction}
 \label{sec:bg_prediction_paradigms}
-% Ver1. 
 % Despite the central role of RNA secondary structure in mediating molecular function, experimentally determining RNA secondary structure remains costly, time-consuming, and infeasible at scale.
 % High-resolution experimental techniques offer limited throughput and applicability, restricting their use in large-scale or systematic studies.
 % % High-resolution experimental techniques offer limited throughput and applicability, particularly for long transcripts, transient conformational states, or newly discovered non-coding RNAs.
@@ -336,7 +333,6 @@ enforces the relevant structural constraints.
 % Existing methods can be broadly categorized into (i) classical algorithmic approaches grounded in physical and thermodynamic principles, (ii) data-driven methods based on machine learning and neural networks, and (iii) more recent approaches that integrate RNA foundation models as representation backbones.
 % In this section, we provide an overview of these three classes of methods and situate our work within this landscape by comparing their respective strengths, limitations, and underlying assumptions.
 
-% Ver2.
 % RNA secondary structure captures the overall base-pairing interactions while remaining substantially more tractable than full three-dimensional structure, and has therefore long been the central focus of RNA structure prediction \citep{tinoco1999how,turner2009nndb}. In this section, we review three major computational approaches:
 % (i) classical thermodynamic energy-based algorithms,
 % (ii) data-driven methods based on machine learning and neural networks, and
@@ -1533,7 +1529,6 @@ Total              & 18{,}820 & \\
 \label{sec:exp_data_pairspace}
 For each dataset partition, we compute two summary statistics. The \textbf{pair rate} measures the proportion of candidate nucleotide pairs that are annotated as true base pairs. The \textbf{base-pair composition} records the relative frequency of each nucleotide-pair type among the annotated base pairs.
 % RNA base-pair prediction is an extremely imbalanced pairwise classification problem. For a sequence of length $L$, there are $L(L{-}1)/2$ unordered candidate nucleotide pairs, but only a small fraction correspond to true base pairs. We summarize pair-space characteristics using two statistics that capture different aspects of the data: the \textbf{pair rate}, which quantifies overall class imbalance. 
-% 더불어 ~알아보기 위해 and the \textbf{base-pair composition}, 
 % which characterizes the distribution of base-pair types in the dataset.
 
 \textbf{Pair rate.}
@@ -1919,7 +1914,6 @@ The shift from TS0 to NEW does not affect all models equally. RNA-FM drops notic
 
 % We interpret these TS0--NEW differences as an empirical robustness diagnostic of the full probing-and-decoding pipeline, rather than as definitive evidence of overfitting, since all operating points are selected on VL0 and the two test splits may differ in composition (e.g., family distribution and length profiles).
 
-% 한가지 A notable pattern in Table~\ref{tab:probe_unconstrained_full} 에서 주목할만한 사실은 general FM?인 roberta의 성능이 ernie를 제외한 ~로 학습된 나머지 rna fm들에 비해서 균등하거나 높았다는 사실이다. 특히 OOD를 평가하는 NEW셋의 경우 ERNIE 다음으로 성능이 높았던 것으로 나왔다. 더불어서 rnafm은 TS가 NEW에 비해 상대적으로 35% 가량 높아서 RNA family내? overfitting의 가능성을 보여줌에 반해 roberta는 NEW 셋에서의 성능이 TS0에 비해 높게 나왔다는 점이다. 
 % A notable pattern in Table~\ref{tab:probe_unconstrained_full} is that the precision--recall trade-off differs by model even under the same decoding rule (greedy max-1 with threshold stopping).
 % ERNIE-RNA attains balanced precision and recall on TS0 (Prec $=0.451$, Rec $=0.425$) and retains competitive precision on NEW (Prec $=0.471$) with a moderate drop in recall (Rec $=0.354$).
 % By contrast, several weaker encoders show either low precision (e.g., RoBERTa TS0 Prec $=0.068$) or low recall (e.g., RNAFM NEW Rec $=0.092$).

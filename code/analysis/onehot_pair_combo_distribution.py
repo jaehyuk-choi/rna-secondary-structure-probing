@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Unconstrained: 각 16가지 염기쌍 조합별 예측 비율 (count, rate).
-지원 모델: onehot, rinalmo (--model 옵션)
-Output: {model}_pair_combo_distribution.csv
+Under unconstrained decoding, report prediction counts and rates for all 16 nucleotide-pair combinations.
+Supported models: `onehot`, `rinalmo` via `--model`.
+Output: `{model}_pair_combo_distribution.csv`
 """
 
 import argparse

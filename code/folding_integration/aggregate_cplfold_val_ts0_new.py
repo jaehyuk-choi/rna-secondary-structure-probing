@@ -99,7 +99,7 @@ def main():
 
     print()
     print("=" * 80)
-    print("TS0 / NEW: Val optimal alpha 적용 결과")
+    print("TS0 / NEW: Results at the validation-selected optimal alpha")
     print("(Val optimal alpha from feb23 VL0; TS0/NEW from feb8)")
     print("=" * 80)
     print()
@@ -124,7 +124,7 @@ def main():
 
     print()
     print("=" * 80)
-    print("TS0 / NEW: Alpha=0 (bonus 없음, baseline)")
+    print("TS0 / NEW: Alpha=0 (no bonus, baseline)")
     print("=" * 80)
     print()
     print("| Model | Backend | TS0 F1 (α=0) | NEW F1 (α=0) |")

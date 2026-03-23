@@ -1,24 +1,24 @@
-# march1 스크립트 설명
+# march1 Scripts
 
-## scripts/ (시각화)
+## `scripts/` for plotting
 
-### plot_alpha0_vs_best.py
+### `plot_alpha0_vs_best.py`
 
-**역할**: CPLfold α=0 vs best α 비교 결과 시각화
+**Purpose**: visualize CPLfold results at `α=0` versus the validation-selected best `α`
 
-**입력**: `data/alpha0_vs_best_full.csv` (feb25에서 복사)
+**Input**: `data/alpha0_vs_best_full.csv` copied from `feb25`
 
-**출력** (figures/):
-- `fig1_grouped_bar.png` - 4개 partition별 grouped bar (α=0 vs best α)
-- `fig2_pct_improvement_heatmap.png` - %Δ 개선도 heatmap (model × partition)
-- `fig3_best_alpha.png` - 모델별 Val-optimal α (Vienna vs Contrafold)
-- `fig4_significance_summary.png` - 통계 유의성 요약 (***/**/*/n.s.)
-- `fig5_combined_panel.png` - 2×2 종합 패널
-- `fig6_line_vienna.png` - 꺽은선: Vienna TS0→NEW F1 (모델별)
-- `fig7_line_contrafold.png` - 꺽은선: Contrafold TS0→NEW F1 (모델별)
-- `fig8_line_both.png` - 꺽은선 Vienna+Contrafold 2개
+**Outputs** in `figures/`
+- `fig1_grouped_bar.png`: grouped bars by partition
+- `fig2_pct_improvement_heatmap.png`: `%Δ` heatmap over `(model, partition)`
+- `fig3_best_alpha.png`: best `α` by model and backend
+- `fig4_significance_summary.png`: significance summary
+- `fig5_combined_panel.png`: combined summary panel
+- `fig6_line_vienna.png`: ViennaRNA TS0→NEW line plot
+- `fig7_line_contrafold.png`: Contrafold TS0→NEW line plot
+- `fig8_line_both.png`: combined ViennaRNA and Contrafold line plots
 
-**실행**:
+**Run**
 ```bash
 cd /projects/u6cg/jay/dissertations/march1
 python scripts/plot_alpha0_vs_best.py
@@ -26,69 +26,73 @@ python scripts/plot_alpha0_vs_best.py
 
 ---
 
-### plot_probe_only.py
+### `plot_probe_only.py`
 
-**역할**: Probe-only (unconstrained) 결과 시각화
+**Purpose**: visualize probe-only results under unconstrained decoding
 
-**입력**: `unconstrained_results_summary.csv` 또는 `final_test_metrics.csv` + `final_new_metrics.csv`
+**Input**: `unconstrained_results_summary.csv` or the pair `final_test_metrics.csv` and `final_new_metrics.csv`
 
-**출력** (figures/):
-- `probe_f1_comparison.png` - TS0 vs NEW F1 by model
-- `probe_precision_recall.png` - Precision vs Recall scatter (TS0)
+**Outputs** in `figures/`
+- `probe_f1_comparison.png`: TS0 vs. NEW F1 by model
+- `probe_precision_recall.png`: TS0 precision-recall scatter
 
-**실행**:
+**Run**
 ```bash
 python scripts/plot_probe_only.py
 ```
 
 ---
 
-### plot_vl0_alpha_sweep.py
+### `plot_vl0_alpha_sweep.py`
 
-**역할**: Validation (VL0) set — α sweep (0→2, step 0.02) F1 vs α 꺽은선 그래프
+**Purpose**: plot validation-set F1 against `α` over the `0→2` sweep with step `0.02`
 
-**입력**: feb23/results_vl0_feb8, results_vl0_contrafold_feb8
+**Input**
+- `feb23/results_vl0_feb8`
+- `results_vl0_contrafold_feb8`
 
-**출력** (figures/):
-- `vl0_alpha_sweep_vienna.png` - Vienna
-- `vl0_alpha_sweep_contrafold.png` - Contrafold
-- `vl0_alpha_sweep_both.png` - 둘 다 2 subplot
+**Outputs** in `figures/`
+- `vl0_alpha_sweep_vienna.png`
+- `vl0_alpha_sweep_contrafold.png`
+- `vl0_alpha_sweep_both.png`
 
 ---
 
-### run_all_plots.sh
+### `run_all_plots.sh`
 
-**역할**: 모든 시각화 스크립트 일괄 실행
+**Purpose**: run all plotting scripts in batch
 
-**실행**:
+**Run**
 ```bash
 bash scripts/run_all_plots.sh
 ```
 
 ---
 
-## 루트 스크립트
+## Root-level scripts
 
-### select_unconstrained_best_config.py
+### `select_unconstrained_best_config.py`
 
-**역할**: Unconstrained decoding에서 best config 선택 (Val F1 기준)
+**Purpose**: select the best configuration for unconstrained decoding using validation F1
 
-**입력**: probe 결과, config 후보
+**Input**: probe results and configuration candidates
 
-**출력**: `final_selected_config_unconstrained.csv`
-
----
-
-### compute_probe_only_with_wobble.py
-
-**역할**: Wobble(GU) 포함 probe-only 평가
-
-**출력**: `final_test_metrics_wobble.csv`, `final_new_metrics_wobble.csv`
+**Output**: `final_selected_config_unconstrained.csv`
 
 ---
 
-### build_summary_table.py
+### `compute_probe_only_with_wobble.py`
 
-**역할**: `final_test_metrics.csv` + `final_new_metrics.csv` → `unconstrained_results_summary.csv` 병합
+**Purpose**: evaluate probe-only predictions with GU wobble pairs included
 
-**실행**: probe_only 완료 후
+**Outputs**
+- `final_test_metrics_wobble.csv`
+- `final_new_metrics_wobble.csv`
+
+---
+
+### `build_summary_table.py`
+
+**Purpose**: merge `final_test_metrics.csv` and `final_new_metrics.csv` into `unconstrained_results_summary.csv`
+
+**Run**: after probe-only evaluation completes

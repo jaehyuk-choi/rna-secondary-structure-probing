@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """
-데이터에서 "모든 후보쌍 (i<j)" 중 WC+GU가 차지하는 비율 계산.
+Compute the proportion of WC and WC+GU pairs among all candidate pairs with i<j.
 
-각 시퀀스에 대해: 모든 (i,j) where i<j 에서
-- base_i, base_j가 WC(AU,UA,CG,GC) 또는 GU(GU,UG)이면 canonical
-- rate = canonical_count / total_pairs
+For each sequence, count every pair (i, j) with i<j.
+A pair is considered canonical if `(base_i, base_j)` is
+- Watson-Crick: AU, UA, CG, GC
+- wobble: GU, UG
 """
 
 import csv
@@ -69,7 +70,7 @@ def main():
     out_dir = Path('/projects/u6cg/jay/dissertations/march1/data')
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    # Table format: Model, TS0_WC, TS0_WC+GU, NEW_WC, NEW_WC+GU (as %)
+    # Table format: Model, TS0_WC, TS0_WC+GU, NEW_WC, NEW_WC+GU (percent)
     ts0_pairs, ts0_wc, ts0_wc_gu = by_partition['TS0']
     new_pairs, new_wc, new_wc_gu = by_partition['NEW']
     ts0_wc_gu_rate = 100*ts0_wc_gu/ts0_pairs if ts0_pairs else 0
@@ -82,7 +83,7 @@ def main():
         'new_wc_gu_pct': f'{new_wc_gu_rate:.2f}%' if new_pairs else '-',
     }
 
-    # Save baseline table (LaTeX-ready format matching the canonical rate table)
+    # Save the baseline row in the same format used by the canonical-rate table.
     table_path = out_dir / 'canonical_rate_baseline_table.csv'
     with open(table_path, 'w', newline='') as f:
         w = csv.DictWriter(f, fieldnames=['model', 'ts0_wc_pct', 'ts0_wc_gu_pct', 'new_wc_pct', 'new_wc_gu_pct'])
@@ -102,10 +103,10 @@ def main():
         w.writeheader()
         w.writerows(rows)
 
-    print("--- Baseline: 모든 후보쌍 (i<j) 중 WC / WC+GU 비율 ---")
+    print("--- Baseline: WC / WC+GU among all candidate pairs with i<j ---")
     print(f"  TS0: WC {100*ts0_wc/ts0_pairs:.1f}%, WC+GU {ts0_wc_gu:,} / {ts0_pairs:,} = {ts0_wc_gu_rate:.2f}%")
     print(f"  NEW: WC {100*new_wc/new_pairs:.1f}%, WC+GU {new_wc_gu:,} / {new_pairs:,} = {new_wc_gu_rate:.2f}%")
-    print(f"\n표 형식 (Baseline 행):")
+    print(f"\nTable format (baseline row):")
     print(f"  {baseline_row['model']} | TS0 WC {baseline_row['ts0_wc_pct']} | TS0 WC+GU {baseline_row['ts0_wc_gu_pct']} | NEW WC {baseline_row['new_wc_pct']} | NEW WC+GU {baseline_row['new_wc_gu_pct']}")
     print(f"\nSaved {table_path}, {raw_path}")
 

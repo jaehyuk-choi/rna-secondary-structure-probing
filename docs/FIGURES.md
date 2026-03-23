@@ -1,100 +1,99 @@
-# march1 시각화 (figures/) 설명
+# march1 Figures
 
-## CPLfold α=0 vs best α
+## CPLfold `α=0` vs. best `α`
 
-### fig1_grouped_bar.png
+### `fig1_grouped_bar.png`
 
-**내용**: 4개 partition (TS0 Vienna, TS0 Contrafold, NEW Vienna, NEW Contrafold)별로, 모델별 mean F1 비교
+Mean F1 by model across the four evaluation settings: `TS0 Vienna`, `TS0 Contrafold`, `NEW Vienna`, and `NEW Contrafold`.
 
-- **회색 막대**: α=0 (bonus 없음)
-- **파란 막대**: best α (Val-optimal)
-- **해석**: 막대 차이가 클수록 CPLfold bonus 효과가 큼
-
----
-
-### fig2_pct_improvement_heatmap.png
-
-**내용**: model × partition heatmap, %Δ (best α 대비 α=0 개선율)
-
-- **색**: 녹색=개선, 빨강=악화
-- **값**: +20.7% 등 퍼센트 표시
-- **해석**: ernie, rnafm이 TS0/NEW에서 큰 개선
+- Gray bars: `α=0` baseline with no bonus
+- Blue bars: validation-selected best `α`
+- Larger gaps indicate stronger benefit from CPLfold bonuses
 
 ---
 
-### fig3_best_alpha.png
+### `fig2_pct_improvement_heatmap.png`
 
-**내용**: 모델별 Val-optimal α (Vienna vs Contrafold)
+Heatmap over `(model, partition)` showing `%Δ`, the relative improvement from `α=0` to the best `α`.
 
-- **파란 막대**: Vienna
-- **빨간 막대**: Contrafold
-- **해석**: ernie, rnafm은 α≈1~2, rinalmo Vienna는 α=0
-
----
-
-### fig4_significance_summary.png
-
-**내용**: 통계 유의성 (paired t-test)
-
-- ***: p<0.001
-- **: p<0.005
-- *: p<0.01
-- n.s.: not significant
+- Green indicates improvement
+- Red indicates degradation
+- Cell values are shown as percentages
 
 ---
 
-### fig5_combined_panel.png
+### `fig3_best_alpha.png`
 
-**내용**: 2×2 종합 패널 (TS0 Vienna bar, NEW Vienna bar, %Δ heatmap, best α bar)
+Validation-selected `α` values by model for ViennaRNA and Contrafold.
 
----
-
-### fig6_line_vienna.png
-
-**내용**: 꺽은선 그래프 — Vienna, TS0 → NEW mean F1 (모델별)
+- Blue bars: ViennaRNA
+- Red bars: Contrafold
 
 ---
 
-### fig7_line_contrafold.png
+### `fig4_significance_summary.png`
 
-**내용**: 꺽은선 그래프 — Contrafold, TS0 → NEW mean F1 (모델별)
+Paired t-test significance summary.
 
----
-
-### fig8_line_both.png
-
-**내용**: Vienna + Contrafold 꺽은선 그래프 2개 (나란히)
-
----
-
-## Validation (VL0) α sweep
-
-### vl0_alpha_sweep_vienna.png
-
-**내용**: VL0 Vienna — α 0~2 (step 0.02)에 따른 mean F1 꺽은선 (모델별)
+- `***`: `p < 0.001`
+- `**`: `p < 0.005`
+- `*`: `p < 0.01`
+- `n.s.`: not significant
 
 ---
 
-### vl0_alpha_sweep_contrafold.png
+### `fig5_combined_panel.png`
 
-**내용**: VL0 Contrafold — α 0~2에 따른 mean F1 꺽은선 (모델별)
-
----
-
-### vl0_alpha_sweep_both.png
-
-**내용**: Vienna + Contrafold 2개 subplot
+Combined `2×2` panel containing selected bar plots, the `%Δ` heatmap, and the best-`α` summary.
 
 ---
 
-## Probe-only
+### `fig6_line_vienna.png`
 
-### probe_f1_comparison.png
-
-**내용**: TS0 vs NEW F1 by model (unconstrained probe-only)
+Line plot of mean F1 from TS0 to NEW under ViennaRNA, grouped by model.
 
 ---
 
-### probe_precision_recall.png
+### `fig7_line_contrafold.png`
 
-**내용**: Precision vs Recall scatter (TS0, probe-only)
+Line plot of mean F1 from TS0 to NEW under Contrafold, grouped by model.
+
+---
+
+### `fig8_line_both.png`
+
+Side-by-side ViennaRNA and Contrafold line plots.
+
+---
+
+## Validation (VL0) `α` sweep
+
+### `vl0_alpha_sweep_vienna.png`
+
+Mean F1 on VL0 as a function of `α` from `0` to `2` (step `0.02`) under ViennaRNA.
+
+---
+
+### `vl0_alpha_sweep_contrafold.png`
+
+Mean F1 on VL0 as a function of `α` from `0` to `2` (step `0.02`) under Contrafold.
+
+---
+
+### `vl0_alpha_sweep_both.png`
+
+Two-panel figure combining the ViennaRNA and Contrafold VL0 sweep curves.
+
+---
+
+## Probe-only figures
+
+### `probe_f1_comparison.png`
+
+TS0 vs. NEW F1 by model for unconstrained probe-only decoding.
+
+---
+
+### `probe_precision_recall.png`
+
+Precision-recall scatter plot for TS0 under probe-only decoding.

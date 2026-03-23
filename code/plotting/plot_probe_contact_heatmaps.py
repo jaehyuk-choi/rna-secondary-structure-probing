@@ -56,7 +56,7 @@ MODEL_LABELS = {
     'rinalmo': 'RiNALMo',
     'onehot': 'One-hot',
 }
-MODELS = ['ernie', 'roberta', 'rnafm', 'rinalmo', 'onehot', 'rnabert']  # rinalmo 추가, 순서: 성능 좋은 순
+MODELS = ['ernie', 'roberta', 'rnafm', 'rinalmo', 'onehot', 'rnabert']  # Ordered by probe-only performance.
 
 
 def load_best_config():
@@ -326,7 +326,7 @@ def main():
 
     n_models = len(MODELS)
     n_seqs = len(seq_ids)
-    # Cols: GT | Pred | Pred≥τ (τ 이상 강조) | TP/FP/FN (if not --no-tp-fp-fn)
+    # Columns: GT | Pred | Pred>=tau | TP/FP/FN (if not --no-tp-fp-fn)
     n_cols = 3 if args.no_tp_fp_fn else 4
     n_rows = n_seqs * n_models
 
@@ -407,7 +407,7 @@ def main():
                 ax1.set_ylim(L - 0.5, -0.5)
                 plt.colorbar(im1, ax=ax1, label='p_ij')
 
-                # Pred≥τ: vmin=τ so values below τ are clamped to dark, τ 이상 강조
+                # Use vmin=tau to darken sub-threshold values.
                 im2 = ax2.imshow(P_ut, cmap='hot', aspect='equal', vmin=tau, vmax=1)
                 ax2.set_xlabel('Nucleotide position')
                 ax2.set_ylabel('Nucleotide position')

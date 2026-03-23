@@ -1,72 +1,72 @@
-# march1 저장 구조 및 데이터 흐름
+# march1 Storage Layout and Data Flow
 
-march1 폴더의 파일 저장 방식과 파이프라인을 정리한 문서입니다.
+This document summarizes the file layout and pipeline outputs used in `march1`.
 
 ---
 
-## 1. 디렉터리 구조
+## 1. Directory structure
 
-```
+```text
 march1/
 ├── README.md
-├── docs/                    # 문서
-│   ├── STORAGE.md           # 이 문서 (저장 구조)
-│   ├── FILE_INDEX.md        # 전체 파일 인덱스
-│   ├── DATA.md              # 데이터 파일 설명
-│   ├── SCRIPTS.md           # 스크립트 설명
-│   └── FIGURES.md           # 그림 설명
+├── docs/                    # documentation
+│   ├── STORAGE.md           # this document
+│   ├── FILE_INDEX.md        # file index
+│   ├── DATA.md              # data-file descriptions
+│   ├── SCRIPTS.md           # script descriptions
+│   └── FIGURES.md           # figure descriptions
 │
-├── data/                    # 정리된 입력 데이터 (외부에서 복사/생성)
+├── data/                    # curated input data copied or generated upstream
 │   └── alpha0_vs_best_full.csv
 │
-├── figures/                 # 시각화 결과 (PNG)
+├── figures/                 # figure outputs
 │   ├── fig1_grouped_bar.png
 │   ├── fig2_pct_improvement_heatmap.png
-│   ├── ... (CPLfold α=0 vs best)
+│   ├── ... (CPLfold α=0 vs. best)
 │   ├── vl0_alpha_sweep_*.png
 │   └── probe_*.png
 │
-├── scripts/                 # 시각화 스크립트
+├── scripts/                 # plotting scripts
 │   ├── plot_alpha0_vs_best.py
 │   ├── plot_probe_only.py
 │   ├── plot_vl0_alpha_sweep.py
 │   └── run_all_plots.sh
 │
-├── [Config & Probe 파이프라인]
-│   ├── final_selected_config_unconstrained.csv   # Config 선택 결과
-│   ├── final_test_metrics.csv                    # Probe TS0 결과
-│   ├── final_new_metrics.csv                     # Probe NEW 결과
-│   ├── final_test_metrics_wobble.csv             # Probe TS0 (wobble)
-│   ├── final_new_metrics_wobble.csv              # Probe NEW (wobble)
-│   └── unconstrained_results_summary.csv         # TS0+NEW 병합 요약
+├── [Config & Probe pipeline]
+│   ├── final_selected_config_unconstrained.csv   # selected config
+│   ├── final_test_metrics.csv                    # TS0 probe-only results
+│   ├── final_new_metrics.csv                     # NEW probe-only results
+│   ├── final_test_metrics_wobble.csv             # TS0 with wobble
+│   ├── final_new_metrics_wobble.csv              # NEW with wobble
+│   └── unconstrained_results_summary.csv         # merged TS0/NEW summary
 │
-├── [실행 스크립트]
+├── [Execution scripts]
 │   ├── run_probe_only.sh
 │   └── run_wobble_nohup.sh
 │
-├── [루트 스크립트]
+├── [Root scripts]
 │   ├── select_unconstrained_best_config.py
 │   ├── compute_probe_only_with_wobble.py
 │   └── build_summary_table.py
 │
-├── [로그/임시]
+├── [Logs / temporary files]
 │   ├── probe_only_progress.log
 │   ├── probe_only_wobble_progress.log
 │   └── nohup_wobble.out
 │
-└── [기타]
+└── [Miscellaneous]
     ├── unconstrained_results_table.md
     └── ...
 ```
 
 ---
 
-## 2. 데이터 저장 흐름 (파이프라인)
+## 2. Data flow
 
-### 2.1 Config 선택 → Probe 평가 (Unconstrained)
+### 2.1 Config selection to probe evaluation
 
-```
-feb8/results_updated/outputs/     (checkpoint, val_threshold_sweep_*.csv)
+```text
+feb8/results_updated/outputs/     (checkpoints, val_threshold_sweep_*.csv)
         │
         ▼  select_unconstrained_best_config.py
 final_selected_config_unconstrained.csv   ← model, layer, k, threshold, decoding_mode
@@ -75,110 +75,109 @@ final_selected_config_unconstrained.csv   ← model, layer, k, threshold, decodi
         │   --config-csv march1/final_selected_config_unconstrained.csv
         │   --output-dir march1
         │
-        ├──► final_test_metrics.csv   (TS0 partition)
-        └──► final_new_metrics.csv    (NEW partition)
+        ├──► final_test_metrics.csv   (TS0)
+        └──► final_new_metrics.csv    (NEW)
         │
         ▼  build_summary_table.py
-unconstrained_results_summary.csv   ← ts0_f1, new_f1, precision, recall 병합
+unconstrained_results_summary.csv   ← merged TS0/NEW summary metrics
 ```
 
-### 2.2 Probe Wobble (별도 실행)
+### 2.2 Wobble evaluation
 
-```
+```text
 final_selected_config_unconstrained.csv
         │
         ▼  compute_probe_only_with_wobble.py
-        │   (nohup 백그라운드: run_wobble_nohup.sh)
+        │   (background execution via run_wobble_nohup.sh)
         │
         ├──► final_test_metrics_wobble.csv
         └──► final_new_metrics_wobble.csv
 ```
 
-### 2.3 시각화
+### 2.3 Plotting
 
-```
-입력                              스크립트                      출력 (figures/)
-─────────────────────────────────────────────────────────────────────────────
-data/alpha0_vs_best_full.csv  →  plot_alpha0_vs_best.py    →  fig1~8_*.png
-feb23/results_vl0_*           →  plot_vl0_alpha_sweep.py   →  vl0_alpha_sweep_*.png
-unconstrained_results_summary  →  plot_probe_only.py        →  probe_*.png
+```text
+Input                           Script                         Output
+────────────────────────────────────────────────────────────────────────────────
+data/alpha0_vs_best_full.csv →  plot_alpha0_vs_best.py    →  fig1~8_*.png
+feb23/results_vl0_*          →  plot_vl0_alpha_sweep.py   →  vl0_alpha_sweep_*.png
+unconstrained_results_summary →  plot_probe_only.py        →  probe_*.png
 (final_test + final_new)
 ```
 
 ---
 
-## 3. 파일별 저장 역할
+## 3. File roles
 
-### 3.1 입력 (외부/선행 단계)
+### 3.1 Inputs from upstream stages
 
-| 파일 | 출처 | 용도 |
-|------|------|------|
-| `data/alpha0_vs_best_full.csv` | feb25에서 복사 | CPLfold α=0 vs best 비교 |
-| `feb8/results_updated/outputs/` | feb8 학습 결과 | checkpoint, val sweep |
-| `feb23/results_vl0_*` | feb23 VL0 실험 | α sweep 시각화 |
+| File | Source | Use |
+|------|--------|-----|
+| `data/alpha0_vs_best_full.csv` | copied from `feb25` | comparison of `α=0` vs. best `α` |
+| `feb8/results_updated/outputs/` | `feb8` training outputs | checkpoints and validation sweeps |
+| `feb23/results_vl0_*` | `feb23` VL0 experiments | `α`-sweep visualization |
 
-### 3.2 Config & Probe 결과 (march1 내부 생성)
+### 3.2 Config and probe outputs generated in `march1`
 
-| 파일 | 생성 스크립트 | 내용 |
-|------|---------------|------|
-| `final_selected_config_unconstrained.csv` | select_unconstrained_best_config.py | 모델별 best (layer, k, threshold) |
-| `final_test_metrics.csv` | compute_feb8_probe_only_metrics.py | TS0 partition 상세 (precision, recall, F1, TP, FP, FN) |
-| `final_new_metrics.csv` | compute_feb8_probe_only_metrics.py | NEW partition 상세 |
-| `final_*_wobble.csv` | compute_probe_only_with_wobble.py | Wobble(GU) 포함 평가 |
-| `unconstrained_results_summary.csv` | build_summary_table.py | TS0+NEW 요약 (ts0_f1, new_f1 등) |
+| File | Generated by | Description |
+|------|--------------|-------------|
+| `final_selected_config_unconstrained.csv` | `select_unconstrained_best_config.py` | selected `(layer, k, threshold)` by model |
+| `final_test_metrics.csv` | `compute_feb8_probe_only_metrics.py` | detailed TS0 metrics |
+| `final_new_metrics.csv` | `compute_feb8_probe_only_metrics.py` | detailed NEW metrics |
+| `final_*_wobble.csv` | `compute_probe_only_with_wobble.py` | evaluation with GU wobble allowed |
+| `unconstrained_results_summary.csv` | `build_summary_table.py` | merged TS0/NEW summary |
 
-### 3.3 시각화 출력
+### 3.3 Figure outputs
 
-| 디렉터리 | 생성 스크립트 | 파일 수 |
-|----------|---------------|---------|
-| `figures/` | plot_alpha0_vs_best.py | fig1~8 (8개) |
-| `figures/` | plot_vl0_alpha_sweep.py | vl0_alpha_sweep_* (3개) |
-| `figures/` | plot_probe_only.py | probe_* (2개) |
+| Directory | Generated by | Files |
+|-----------|--------------|-------|
+| `figures/` | `plot_alpha0_vs_best.py` | `fig1` to `fig8` |
+| `figures/` | `plot_vl0_alpha_sweep.py` | `vl0_alpha_sweep_*` |
+| `figures/` | `plot_probe_only.py` | `probe_*` |
 
-### 3.4 로그/임시
+### 3.4 Logs and temporary files
 
-| 파일 | 생성 | 용도 |
-|------|------|------|
-| `probe_only_progress.log` | compute_feb8_probe_only_metrics.py | probe 진행 상황 (tail -f) |
-| `probe_only_wobble_progress.log` | compute_probe_only_with_wobble.py | wobble 진행 상황 |
-| `nohup_wobble.out` | nohup | wobble 표준출력/에러 |
+| File | Generated by | Use |
+|------|--------------|-----|
+| `probe_only_progress.log` | `compute_feb8_probe_only_metrics.py` | probe-only progress log |
+| `probe_only_wobble_progress.log` | `compute_probe_only_with_wobble.py` | wobble evaluation progress log |
+| `nohup_wobble.out` | `nohup` | stdout/stderr for background wobble runs |
 
 ---
 
-## 4. 권장 실행 순서
+## 4. Recommended execution order
 
-1. **Config 선택**  
+1. **Select the configuration**  
    `python select_unconstrained_best_config.py`  
-   → `final_selected_config_unconstrained.csv` 생성
+   Produces `final_selected_config_unconstrained.csv`
 
-2. **Probe 평가 (TS0 + NEW)**  
+2. **Run probe-only evaluation on TS0 and NEW**  
    `bash run_probe_only.sh`  
-   또는 TS0만: `--dataset ts0`  
-   NEW만: `--dataset new` (기존 TS0 CSV 로드)
+   For TS0 only: `--dataset ts0`  
+   For NEW only: `--dataset new`
 
-3. **요약 테이블**  
+3. **Build the summary table**  
    `python build_summary_table.py`  
-   → `unconstrained_results_summary.csv` 갱신
+   Updates `unconstrained_results_summary.csv`
 
-4. **시각화**  
-   `bash scripts/run_all_plots.sh`  
-   또는 개별: `python scripts/plot_probe_only.py` 등
+4. **Generate plots**  
+   `bash scripts/run_all_plots.sh`
 
-5. **Wobble (선택, 백그라운드)**  
+5. **Optional wobble evaluation**  
    `bash run_wobble_nohup.sh`
 
 ---
 
-## 5. Probe-only 저장 세부사항
+## 5. Probe-only output details
 
-- **compute_feb8_probe_only_metrics.py**  
-  - 모델별로 TS0 → NEW 순서 실행  
-  - 각 모델 완료 시 `write_partial_csv()` 호출 → `final_test_metrics.csv`, `final_new_metrics.csv` 갱신  
-  - `--dataset ts0`: TS0만 계산, 기존 NEW 유지  
-  - `--dataset new`: NEW만 계산, 기존 TS0 로드  
-  - `--dataset both`: 둘 다 (기본값)
+- `compute_feb8_probe_only_metrics.py`
+  - Processes models in TS0 then NEW order
+  - Calls `write_partial_csv()` after each model to update `final_test_metrics.csv` and `final_new_metrics.csv`
+  - `--dataset ts0`: recompute TS0 only and keep the existing NEW file
+  - `--dataset new`: recompute NEW only and keep the existing TS0 file
+  - `--dataset both`: run both partitions
 
-- **경로**  
-  - config: `--config-csv march1/final_selected_config_unconstrained.csv`  
-  - 출력: `--output-dir march1`  
-  - 로그: `--progress-log march1/probe_only_progress.log`
+- Key paths
+  - config: `--config-csv march1/final_selected_config_unconstrained.csv`
+  - output: `--output-dir march1`
+  - log: `--progress-log march1/probe_only_progress.log`
