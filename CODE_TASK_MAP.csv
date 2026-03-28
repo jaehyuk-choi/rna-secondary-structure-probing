@@ -1,0 +1,45 @@
+file,task,stage,inputs,outputs,notes
+code/models/bilinear_probe_model.py,Probe model definition,model,"—","BilinearContactProbe class",Low-rank bilinear W; frozen encoder; BCE loss
+code/probe_training/train_probe_automated.py,Train one probe config,training,"embeddings/*.npy, contact maps, --model/--layer/--k/--seed","results/outputs/{model}/layer_*/k_*/seed_*/best.pt",Early stopping patience=5; balanced pair sampling
+code/probe_training/experiment_config.py,Model/layer/path config,training,"—","Config dicts; detect_model_layers()",Defines REPO_ROOT and embedding paths per model
+code/probe_training/dataset_probe.py,PyTorch Dataset for probing,training,"embedding .npy + contact .npy","RNABasepairDataset",Variable-length collation via rna_collate_fn
+code/probe_training/utils_batch.py,Batching and split utilities,training,"—","collate_rna_batch(); build_lofo_folds()",Padding and masking for DataLoader
+code/probe_training/sbatch_train_model.sh,Slurm: train one model (all layer/k),training,"model name","All checkpoints for one model",24h; 1 GPU; skips existing checkpoints
+code/probe_training/run_all_experiments.sh,Slurm: full pipeline (6 models),training,"—","All jobs submitted with dependencies",Steps: train → sweep → summarise → eval
+code/probe_training/run_split_pipeline.py,CPLfold alpha sweep per partition,folding,"base pairs dir, configs, splits","detailed_results_{model}.csv",ThreadPoolExecutor; robust dot-bracket parsing
+code/probe_inference/generate_base_pairs.py,Generate base-pair predictions,inference,"checkpoint, embeddings, sequence","base_pair.txt (i j prob)",Supports 3 decoding modes
+code/probe_inference/generate_vl0_base_pairs.py,Generate VL0 base-pair files,inference,"checkpoints, VL0 embeddings","base_pair.txt per VL0 sequence",ProcessPoolExecutor parallel
+code/evaluation/select_unconstrained_best_config.py,Select best (layer k tau) per model,evaluation,"results/outputs/ scan","configs/final_selected_config_unconstrained.csv",Max Val F1 selection rule
+code/evaluation/compute_feb8_probe_only_metrics.py,TS0/NEW probe-only metrics,evaluation,"configs, checkpoints, embeddings","results/metrics/final_{test,new}_metrics.csv",Optional --per-sequence mode
+code/evaluation/compute_probe_only_with_wobble.py,Metrics with wobble pair support,evaluation,"configs, checkpoints","results/metrics/*_wobble.csv",Tracks canonical_rate and canonical_rate_wobble
+code/evaluation/build_summary_table.py,Merge TS0+NEW into summary,evaluation,"final_test_metrics.csv, final_new_metrics.csv","results/metrics/unconstrained_results_summary.csv",—
+code/evaluation/evaluate_predictions.py,Evaluate predicted structures,evaluation,"predicted structures, ground truth","F1 / precision / recall",Core metric computation; dot-bracket parser
+code/folding_integration/CPLfold_inter.py,LinearFold with bonus matrix,folding,"sequence, energy params, bonus matrix","dot-bracket structure + free energy","O(n log n) beam search; Numba JIT; Vienna + CONTRAfold"
+code/folding_integration/run_cplfold_exp.py,CPLfold TS0/NEW experiments,folding,"base pairs, configs, splits, VL0 results","results/folding/detailed_alpha_sweep_*.csv",4 combos: {TS0 NEW} x {Vienna Contrafold}
+code/folding_integration/generate_thresholded_base_pairs.py,Threshold base-pair files,folding,"per-model configs, raw scores","results/folding/base_pairs_thresholded/",RNAFM BOS/EOS slice fix
+code/folding_integration/aggregate_cplfold_val_ts0_new.py,Aggregate CPLfold results,folding,"detailed results per model","summary.csv; per-model summaries",—
+code/analysis/roberta_vs_others_statistical_test.py,RoBERTa vs others significance,analysis,"per_sequence metrics, best config","results/statistics/roberta_vs_others_significance.csv",Paired Wilcoxon + t-test
+code/analysis/build_canonical_rate_table_with_baseline.py,Canonical rate table,analysis,"wobble metrics, baseline rates","results/tables/canonical_rate_table_with_baseline.csv",Also generates .tex table
+code/analysis/compute_wc_gu_rate_all_pairs.py,Baseline WC/GU rate,analysis,"bpRNA metadata","results/tables/wc_gu_rate_all_pairs.csv",Proportion of canonical among all i<j
+code/analysis/onehot_pair_combo_distribution.py,Pair type distribution,analysis,"per-sequence predictions","results/tables/onehot_pair_combo_distribution.csv",—
+code/analysis/compute_pair_statistics.py,Pair stats per split,analysis,"bpRNA metadata, splits","results/tables/pair_statistics_by_split.csv",AU/GC/GU fractions per partition
+code/analysis/aggregate_results.py,Aggregate CPLfold results,analysis,"detailed folding CSVs","results/folding/ summaries",—
+code/analysis/analyze_by_length.py,Performance by length bins,analysis,"detailed results","results/folding/results_by_length.csv",—
+code/analysis/alpha0_vs_best_stats.py,Alpha=0 vs best-alpha stats,analysis,"folding results","results/folding/alpha0_vs_best_*.csv",—
+code/analysis/compare_alpha0_vs_best.py,Alpha comparison data,analysis,"folding results","Comparison CSVs",—
+code/analysis/compute_seq_f1_and_gt.py,Per-sequence metrics,analysis,"individual sequence results","results/per_sequence/*.csv",—
+code/plotting/plot_alpha0_vs_best.py,Alpha=0 vs best-alpha figures,plotting,"results/folding/alpha0_vs_best_full.csv","figures/main/fig*.png (8 figures)",Grouped bar; heatmap; line charts
+code/plotting/plot_probe_only.py,Probe-only F1 figures,plotting,"results/metrics/unconstrained_results_summary.csv","figures/main/probe_f1_comparison.png",TS0 vs NEW bar + precision-recall scatter
+code/plotting/plot_vl0_alpha_sweep.py,VL0 alpha sweep figures,plotting,"results/sweeps/vl0_alpha_sweep_both.csv","figures/main/vl0_alpha_sweep_*.png",Vienna and Contrafold; single + dual panel
+code/plotting/plot_vl0_threshold_sweep.py,Threshold sensitivity figure,plotting,"results/sweeps/","figures/main/vl0_threshold_sweep.png",—
+code/plotting/plot_layer_wise_val_f1.py,Layer-wise F1 line plot,plotting,"results/sweeps/layer_wise_val_f1.csv","figures/main/layer_k_comparison/layer_wise_val_f1.png",—
+code/plotting/plot_k_comparison_by_model.py,k sensitivity bar chart,plotting,"results/sweeps/k_comparison_val_f1.csv","figures/main/layer_k_comparison/k_comparison_val_f1_by_model.png",—
+code/plotting/plot_f1_by_length_boxplot.py,F1 by length boxplots,plotting,"per_sequence metrics, best config","figures/main/length_boxplot/f1_by_length_boxplot.png",TS0 + NEW side-by-side
+code/plotting/plot_pair_combo_distribution.py,Pair type bar chart,plotting,"results/tables/*_pair_combo_distribution.csv","figures/main/pair_combo/pair_combo_distribution.png",One-hot vs RiNALMo
+code/plotting/plot_probe_comparison_grouped_bar.py,Best vs unconstrained bar,plotting,"results/metrics/probe_unconstrained_vs_best_comparison.csv","figures/main/probe_comparison/fig1_grouped_bar_f1_lightorange.png",—
+code/plotting/plot_probe_contact_heatmaps.py,Contact map heatmaps,plotting,"checkpoints, embeddings","figures/main/probe_contact_heatmaps_*.png; figures/appendix/",Selected sequences
+code/preprocessing/compute_structure_features.py,Generate contact maps,preprocessing,"data/metadata/bpRNA.csv","data/contact_maps/bpRNA/{id}_contact.npy",Binary symmetric matrices
+code/preprocessing/plot_bprna_length_boxplot.py,Dataset length boxplot,preprocessing,"data/splits/bpRNA_splits.csv, data/metadata/bpRNA.csv","figures/main/bpRNA_length_boxplot.png",—
+code/utils/evaluation.py,Shared evaluation helpers,utility,"—","is_canonical_pair(); compute_pair_metrics(); etc.",Used by evaluation and analysis scripts
+code/run_sh/run_all_plots.sh,Run all plot scripts,launcher,"—","figures/",Calls plot_alpha0_vs_best + plot_probe_only + plot_vl0_alpha_sweep
+code/run_sh/run_probe_only.sh,Run probe-only evaluation,launcher,"configs, checkpoints","results/metrics/",Calls compute_feb8_probe_only_metrics.py

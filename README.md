@@ -1,79 +1,156 @@
-# Interpreting RNA Foundation Models: Evidence of Structural Awareness in Pretrained Representations
+# Interpreting RNA Foundation Models via Structural Probing
 
-**Author:** Jaehyuk Choi
-**Degree:** BSc Artificial Intelligence, University of Edinburgh
-**Type:** 4th Year Project Report
+**Jaehyuk Choi** — BSc Artificial Intelligence, University of Edinburgh (4th Year Project)
 
-## Project Summary
+## Overview
 
-This dissertation investigates whether pretrained RNA foundation models (RNA FMs) encode base-pairing information in their representations, and whether such information can improve thermodynamic structure prediction. Using low-rank bilinear probes on frozen embeddings from five encoder-only models (ERNIE-RNA, RNA-FM, RoBERTa, RiNALMo, RNABERT) and a one-hot baseline, we assess decodability under varying pairing constraints, then inject probe-derived scores as soft priors into CPLfold under ViennaRNA and CONTRAfold backends.
+This repository investigates whether pretrained RNA foundation models encode base-pairing structure in their learned representations. We train low-rank bilinear probes on frozen per-residue embeddings from five encoder-only RNA language models and a one-hot baseline, then evaluate whether the recovered contact information can improve thermodynamic structure prediction when injected as soft priors into CPLfold.
 
-## About This Package
+**Models tested:** ERNIE-RNA, RNA-FM, RoBERTa, RiNALMo, RNABERT, one-hot baseline
+**Dataset:** bpRNA (TR0 / VL0 / TS0 / NEW splits)
+**Key finding:** All five pretrained models recover significant base-pairing signal; ERNIE-RNA benefits most from CPLfold integration, while RoBERTa transfers best to unseen RNA families.
 
-This is a **final, purpose-organised dissertation submission package**. It contains only the canonical files that were actually used to produce the final dissertation and its reported results. It is organised by functional purpose, not by development chronology.
+## Repository Structure
 
-This package was rebuilt from scratch from the original repository contents, guided by the dissertation LaTeX source (`skeleton.tex`) as the primary source of truth.
+```
+├── code/
+│   ├── models/              Bilinear probe definition (StructuralContactProbe)
+│   ├── probe_training/      Training pipeline + Slurm scripts
+│   ├── probe_inference/     Generate base-pair scores from trained probes
+│   ├── evaluation/          Metric computation, config selection, summary tables
+│   ├── folding_integration/ CPLfold engine + alpha-sweep experiments
+│   ├── analysis/            Canonical rates, statistical tests, pair statistics
+│   ├── plotting/            All dissertation figure scripts
+│   ├── preprocessing/       Contact map generation, dataset statistics
+│   ├── utils/               Shared evaluation helpers
+│   └── run_sh/              Shell launchers
+├── configs/                 Validation-selected hyperparameter configs
+├── data/                    bpRNA metadata and split assignments
+├── results/                 All computed metrics, sweeps, tables, statistics
+├── figures/                 Generated dissertation figures (main + appendix)
+├── dissertation/            LaTeX source (skeleton.tex)
+└── requirements.txt         Python dependencies
+```
 
-## Package Structure
+## Pipeline
 
-| Directory | Contents |
-|---|---|
-| `dissertation/` | LaTeX source and workflow documentation |
-| `code/models/` | Bilinear probe model definition |
-| `code/preprocessing/` | Dataset preparation and feature computation |
-| `code/probe_training/` | Probe training pipeline |
-| `code/probe_inference/` | Base pair score generation from trained probes |
-| `code/evaluation/` | Metric computation and configuration selection |
-| `code/folding_integration/` | CPLfold integration (ViennaRNA/CONTRAfold) |
-| `code/analysis/` | Canonical rate, pair distribution, statistical tests |
-| `code/plotting/` | All dissertation figure generation scripts |
-| `code/utils/` | Shared evaluation utilities |
-| `code/run_sh/` | Shell launcher scripts |
-| `configs/` | Validation-selected model configurations |
-| `results/` | Final metrics, per-sequence outputs, tables, sweeps, folding |
-| `figures/` | Dissertation-referenced figure images (main + appendix) |
-| `data/` | Dataset metadata and split assignments |
-| `docs/` | Technical documentation |
-| `environment/` | Environment specifications (see REVIEW_NOTES.md) |
-| `legacy_optional/` | Reserved for provenance-only files (currently empty) |
+```mermaid
+graph TD
+    A[bpRNA metadata + splits] --> B[Contact maps]
+    E[Pretrained FM embeddings] --> C
 
-## Key Entry Points
+    B --> C[Probe training<br/>train_probe_automated.py]
+    C --> D[Trained checkpoints<br/>results/outputs/]
 
-- **Dissertation source:** `dissertation/skeleton.tex`
-- **Canonical code:** `code/` (organised by pipeline stage)
-- **Canonical results:** `results/` (organised by type)
-- **Figures:** `figures/main/` (9 main figures) + `figures/appendix/` (1 appendix figure)
+    D --> F[Probe inference<br/>generate_base_pairs.py]
+    F --> G[Probe-only evaluation<br/>compute_feb8_probe_only_metrics.py]
+    G --> H[results/metrics/]
 
-## Intentional Exclusions
+    D --> I[VL0 config selection<br/>select_unconstrained_best_config.py]
+    I --> J[configs/]
 
-This package intentionally excludes:
-- All date-based folder organisation (jan22, feb8, feb23, feb25, march1)
-- Duplicate/superseded script iterations
-- Cosmetic figure variants (lightorange, PDF duplicates)
-- Intermediate result files not tied to dissertation tables/figures
-- ~90 Slurm launch scripts that differ only by model/backend
-- Checkpoint weights, embeddings, contact maps (too large)
-- Debug scripts, logs, `__pycache__`, slurm output files
+    F --> K[CPLfold integration<br/>run_cplfold_exp.py + CPLfold_inter.py]
+    K --> L[Alpha sweep on VL0]
+    L --> M[TS0/NEW evaluation<br/>results/folding/]
 
-See `EXCLUDED_OR_SUPERSEDED.md` for full details.
+    H --> N[Analysis + plotting]
+    M --> N
+    N --> O[figures/ + results/tables/]
+```
 
-## High-Level Pipeline
+## Task-to-Code Mapping
 
-1. **Preprocessing:** Compute contact maps from bpRNA annotations (`code/preprocessing/`)
-2. **Probe training:** Train bilinear probes on frozen embeddings (`code/probe_training/`)
-3. **Probe inference:** Generate pairwise base-pair scores (`code/probe_inference/`)
-4. **Evaluation:** Compute F1/precision/recall, select configs on VL0 (`code/evaluation/`)
-5. **Folding integration:** Inject probe scores into CPLfold (`code/folding_integration/`)
-6. **Analysis:** Canonical rates, statistical tests, length analysis (`code/analysis/`)
-7. **Plotting:** Generate all dissertation figures (`code/plotting/`)
+| Task | Code | Key inputs | Key outputs |
+|------|------|-----------|-------------|
+| **Probe model** | `code/models/bilinear_probe_model.py` | — | `BilinearContactProbe` class |
+| **Training** | `code/probe_training/train_probe_automated.py` | Embeddings, contact maps | `results/outputs/{model}/layer_*/k_*/seed_*/best.pt` |
+| **Slurm training** | `code/probe_training/sbatch_train_model.sh` | Model name | All (layer, k) checkpoints for one model |
+| **Full pipeline** | `code/probe_training/run_all_experiments.sh` | — | All training + downstream jobs |
+| **Config selection** | `code/evaluation/select_unconstrained_best_config.py` | `results/outputs/` | `configs/final_selected_config_unconstrained.csv` |
+| **TS0/NEW metrics** | `code/evaluation/compute_feb8_probe_only_metrics.py` | Configs, checkpoints | `results/metrics/final_{test,new}_metrics.csv` |
+| **Wobble metrics** | `code/evaluation/compute_probe_only_with_wobble.py` | Configs, checkpoints | `results/metrics/*_wobble.csv` |
+| **Summary table** | `code/evaluation/build_summary_table.py` | Final metrics | `results/metrics/unconstrained_results_summary.csv` |
+| **CPLfold engine** | `code/folding_integration/CPLfold_inter.py` | Sequence, energy params, bonus matrix | Dot-bracket structure |
+| **CPLfold experiments** | `code/folding_integration/run_cplfold_exp.py` | Base pairs, configs | `results/folding/detailed_alpha_sweep_*.csv` |
+| **VL0 alpha sweep** | `code/probe_training/run_split_pipeline.py` | VL0 sequences, probe scores | `results/sweeps/vl0_alpha_sweep_both.csv` |
+| **Canonical rates** | `code/analysis/build_canonical_rate_table_with_baseline.py` | Wobble metrics, baseline | `results/tables/canonical_rate_table_with_baseline.csv` |
+| **RoBERTa stats** | `code/analysis/roberta_vs_others_statistical_test.py` | Per-sequence metrics | `results/statistics/roberta_vs_others_significance.csv` |
+| **Pair statistics** | `code/analysis/compute_pair_statistics.py` | bpRNA metadata, splits | `results/tables/pair_statistics_by_split.csv` |
+| **Figures** | `code/plotting/plot_*.py` | Various results CSVs | `figures/main/*.png`, `figures/appendix/*.png` |
 
-## Documentation Index
+## Dissertation Results Mapping
 
-| File | Purpose |
-|---|---|
-| `MANIFEST.md` | Detailed inventory of included files |
-| `RESULTS_TRACEABILITY.md` | Maps dissertation tables/figures to supporting files |
-| `FILE_SELECTION_DECISIONS.md` | Explains deduplication and selection decisions |
-| `EXCLUDED_OR_SUPERSEDED.md` | Lists intentionally excluded files with reasons |
-| `REVIEW_NOTES.md` | Pre-upload checklist and unresolved items |
-| `TREE.txt` | Readable directory tree |
+| Dissertation reference | Result file |
+|----------------------|-------------|
+| Table 5 — Probe-only F1 (unconstrained) | `results/metrics/unconstrained_results_summary.csv` |
+| Table 6 — Canonical pairing rates | `results/tables/canonical_rate_table_with_baseline.csv` |
+| Table 7 — Pair type distributions | `results/tables/{onehot,rinalmo}_pair_combo_distribution.csv` |
+| Table 8 — Selected hyperparameters | `configs/final_selected_config_unconstrained.csv` |
+| Table 9 — Probe-only F1 (best config) | `results/metrics/final_{test,new}_metrics.csv` |
+| Table 11 — Unconstrained vs best comparison | `results/metrics/probe_unconstrained_vs_best_comparison.csv` |
+| Table 12 — F1 by sequence length | `results/per_sequence/{ts,new}_per_sequence_metrics.csv` |
+| Table 13 — RoBERTa significance tests | `results/statistics/roberta_vs_others_significance.csv` |
+| Fig — α sweep (VL0) | `results/sweeps/vl0_alpha_sweep_both.csv` |
+| Fig — α=0 vs best α | `results/folding/alpha0_vs_best_full.csv` |
+| Fig — Layer-wise F1 | `results/sweeps/layer_wise_val_f1.csv` |
+| Fig — k comparison | `results/sweeps/k_comparison_val_f1.csv` |
+| CPLfold optimal α | `configs/val_optimal_results.csv` |
+
+## Reproduction
+
+### Prerequisites
+
+- Python 3.10+, PyTorch 1.13+ (CUDA recommended)
+- `pip install -r requirements.txt`
+- Optional: ViennaRNA Python bindings (`conda install -c bioconda viennarna`)
+
+### External data (not included — too large)
+
+| Artefact | Expected location |
+|----------|------------------|
+| Per-layer embeddings | `data/embeddings/{MODEL}/bpRNA/by_layer/layer_{N}/{id}.npy` |
+| Contact maps | `data/contact_maps/bpRNA/{id}_contact.npy` |
+| Trained checkpoints | `results/outputs/{model}/layer_*/k_*/seed_*/best.pt` |
+
+Contact maps can be regenerated: `python code/preprocessing/compute_structure_features.py`
+
+### Train a single probe
+
+```bash
+python code/probe_training/train_probe_automated.py \
+    --model rnafm --layer 11 --k 64 --seed 42
+```
+
+### Run full Slurm pipeline (all models)
+
+```bash
+bash code/probe_training/run_all_experiments.sh
+```
+
+### Compute probe-only metrics
+
+```bash
+bash code/run_sh/run_probe_only.sh
+```
+
+### Generate figures
+
+```bash
+bash code/run_sh/run_all_plots.sh
+```
+
+## Experimental Parameters
+
+| Parameter | Values |
+|-----------|--------|
+| Models | ERNIE-RNA, RNA-FM, RoBERTa, RiNALMo, RNABERT, one-hot |
+| Projection rank (k) | 32, 64, 128 |
+| Decoding modes | unconstrained, canonical-only, canonical+wobble |
+| Threshold (τ) | Swept 0.50–0.95 on VL0 |
+| CPLfold α | Swept 0.0–2.0 (step 0.02) on VL0 |
+| Folding backends | ViennaRNA, CONTRAfold |
+| Splits | TR0 (train), VL0 (val), TS0 (in-distribution test), NEW (OOD test) |
+
+## License
+
+This repository is submitted as part of a BSc dissertation at the University of Edinburgh.
