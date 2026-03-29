@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
-"""
-Build unconstrained_results_summary.csv from final_test_metrics.csv and final_new_metrics.csv.
-Run after probe_only completes.
-"""
+"""Merge final_test/new metrics with unconstrained_selected_config into unconstrained_results_summary.csv."""
 
 import csv
 from pathlib import Path
 
-MARCH1 = Path('/projects/u6cg/jay/dissertations/march1')
-CONFIG = MARCH1 / 'final_selected_config_unconstrained.csv'
+REPO_ROOT = Path(__file__).resolve().parents[2]
+CONFIG = REPO_ROOT / 'configs' / 'final_selected_config_unconstrained.csv'
 
 
 def main():
@@ -22,17 +19,16 @@ def main():
                 'decoding_mode': row['selected_decoding_mode'],
             }
 
-    # We don't have val_f1 in config - need to get from val files or leave blank
     ts0 = {}
-    with open(MARCH1 / 'final_test_metrics.csv') as f:
+    with open(REPO_ROOT / 'results' / 'metrics' / 'final_test_metrics.csv') as f:
         for row in csv.DictReader(f):
             ts0[row['model']] = row
     new = {}
-    with open(MARCH1 / 'final_new_metrics.csv') as f:
+    with open(REPO_ROOT / 'results' / 'metrics' / 'final_new_metrics.csv') as f:
         for row in csv.DictReader(f):
             new[row['model']] = row
 
-    summary_path = MARCH1 / 'unconstrained_results_summary.csv'
+    summary_path = REPO_ROOT / 'results' / 'metrics' / 'unconstrained_results_summary.csv'
     with open(summary_path, 'w', newline='') as f:
         fieldnames = [
             'model', 'layer', 'k', 'threshold', 'decoding_mode',

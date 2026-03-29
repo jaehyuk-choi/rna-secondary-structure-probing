@@ -1,11 +1,5 @@
 #!/usr/bin/env python3
-"""Generate thresholded base_pair.txt files for TS0 and NEW partitions.
-
-Like VL0 (feb23): apply p_ij >= threshold per model config.
-Uses feb8 final_selected_config.csv.
-Supports: ernie, roberta, rnafm, rinalmo, onehot (rnabert optional).
-Applies RNAFM [0:-2,0:-2] slice fix (BOS/EOS at end).
-"""
+"""TS0/NEW thresholded base_pair.txt from selected config; RNAFM tail trim as in VL0."""
 
 import argparse
 import csv
@@ -13,9 +7,8 @@ import sys
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 
-# Add jan22 for generate_base_pairs and evaluation utils
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'jan22'))
-from scripts.generation.generate_base_pairs import load_probe_matrix
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from probe_inference.generate_base_pairs import load_probe_matrix
 from utils.evaluation import create_canonical_mask
 
 
@@ -82,14 +75,15 @@ def _process_one_seq(args):
 
 
 def main():
+    REPO_ROOT = Path(__file__).resolve().parents[2]
     ap = argparse.ArgumentParser()
-    ap.add_argument('--splits-csv', default='/projects/u6cg/jay/dissertations/data/bpRNA_splits.csv')
-    ap.add_argument('--bpRNA-csv', default='/projects/u6cg/jay/dissertations/data/bpRNA.csv')
-    ap.add_argument('--config-csv', default='/projects/u6cg/jay/dissertations/feb8/results_updated/summary/final_selected_config.csv')
-    ap.add_argument('--embeddings-base', default='/projects/u6cg/jay/dissertations/data/embeddings')
-    ap.add_argument('--checkpoint-base', default='/projects/u6cg/jay/dissertations/feb8/results_updated/outputs',
-                    help='Probe checkpoints. Fallback: jan22/results_updated/outputs')
-    ap.add_argument('--output-dir', default='/projects/u6cg/jay/dissertations/feb25/base_pairs_thresholded')
+    ap.add_argument('--splits-csv', default=str(REPO_ROOT / 'data' / 'splits' / 'bpRNA_splits.csv'))
+    ap.add_argument('--bpRNA-csv', default=str(REPO_ROOT / 'data' / 'metadata' / 'bpRNA.csv'))
+    ap.add_argument('--config-csv', default=str(REPO_ROOT / 'configs' / 'final_selected_config_unconstrained.csv'))
+    ap.add_argument('--embeddings-base', default=str(REPO_ROOT / 'data' / 'embeddings'))
+    ap.add_argument('--checkpoint-base', default=str(REPO_ROOT / 'results' / 'outputs'),
+                    help='Probe checkpoints. Fallback: results/outputs')
+    ap.add_argument('--output-dir', default=str(REPO_ROOT / 'results' / 'folding' / 'base_pairs_thresholded'))
     ap.add_argument('--partitions', nargs='+', default=['TS0', 'new'],
                     help='Partitions to generate (TS0, new, VL0, etc.)')
     ap.add_argument('--models', nargs='+', default=['ernie', 'roberta', 'rnafm', 'rinalmo', 'onehot'],
@@ -125,7 +119,7 @@ def main():
         if key in partition_ids:
             all_ids.extend(partition_ids[key])
     all_ids = list(dict.fromkeys(all_ids))  # dedupe preserving order
-    print(f"[INFO] Partitions {args.partitions}: {len(all_ids)} unique sequences")
+    print(f"Partitions {args.partitions}: {len(all_ids)} unique sequences")
 
     config = {}
     with open(args.config_csv) as f:
@@ -152,7 +146,7 @@ def main():
         (out_dir / model).mkdir(exist_ok=True)
         cfg = config.get(model)
         if not cfg:
-            print(f"[WARN] No config for model={model}")
+            print(f"warn: No config for model={model}")
             continue
 
         ckpt = (
@@ -164,11 +158,11 @@ def main():
             / 'best.pt'
         )
         if not ckpt.exists():
-            # Fallback to jan22 outputs
-            fallback = Path(__file__).resolve().parents[2] / 'jan22' / 'results_updated' / 'outputs'
+            # Fallback to results/outputs
+            fallback = REPO_ROOT / 'results' / 'outputs'
             ckpt = fallback / model / f"layer_{cfg['layer']}" / f"k_{cfg['k']}" / 'seed_42' / 'best.pt'
         if not ckpt.exists():
-            print(f"[WARNING] Checkpoint not found: {ckpt}")
+            print(f"warn: Checkpoint not found: {ckpt}")
             continue
 
         B, k, d = load_probe_matrix(str(ckpt))
@@ -186,19 +180,19 @@ def main():
             tasks.append((seq_id, str(emb_path), str(out_path), B_npy, thresh, sequence, allow_gu, args.force, use_threshold, model))
 
         n_workers = min(args.num_workers, len(tasks))
-        print(f"[INFO] {model}: {len(tasks)} sequences, {n_workers} workers, decoding_mode={decoding_mode}")
+        print(f"{model}: {len(tasks)} sequences, {n_workers} workers, decoding_mode={decoding_mode}")
 
         done = 0
         with ProcessPoolExecutor(max_workers=n_workers) as ex:
             for fut in as_completed(ex.submit(_process_one_seq, t) for t in tasks):
                 sid, ok, msg = fut.result()
                 if not ok and msg != 'exists':
-                    print(f"[WARN] {model} {sid}: {msg}")
+                    print(f"warn: {model} {sid}: {msg}")
                 done += 1
                 if done % 200 == 0:
-                    print(f"[INFO] {model}: {done}/{len(tasks)}")
+                    print(f"{model}: {done}/{len(tasks)}")
 
-    print(f"[INFO] Done. Output: {out_dir}")
+    print(f"Done. Output: {out_dir}")
 
 
 if __name__ == '__main__':

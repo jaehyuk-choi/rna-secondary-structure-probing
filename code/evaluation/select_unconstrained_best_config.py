@@ -1,28 +1,18 @@
 #!/usr/bin/env python3
-"""
-Select best config per model using VALIDATION only, constrained to unconstrained decoding mode.
-
-Scans all (model, layer, k) runs, reads val_threshold_sweep_unconstrained.csv (or val_threshold_sweep.csv
-with unconstrained rows), finds the (layer, k, threshold) that maximizes Val F1.
-
-Outputs:
-- final_selected_config_unconstrained.csv
-- Runs compute_feb8_probe_only_metrics to get TS0/NEW results
-- Saves summary table to unconstrained_results_summary.csv
-"""
+"""Pick best (layer,k,τ) from val unconstrained sweeps; writes config CSV and runs feb8 probe metrics."""
 
 import csv
 import subprocess
 import sys
 from pathlib import Path
 
-BASE = Path('/projects/u6cg/jay/dissertations')
-OUTPUTS = BASE / 'feb8/results_updated/outputs'
-MARCH1 = BASE / 'march1'
+REPO_ROOT = Path(__file__).resolve().parents[2]
+OUTPUTS = REPO_ROOT / 'results' / 'outputs'
+CONFIG_DIR = REPO_ROOT / 'configs'
+METRICS_DIR = REPO_ROOT / 'results' / 'metrics'
 
 
 def find_unconstrained_val_sweep(run_dir: Path) -> Path | None:
-    """Return path to unconstrained val sweep file, or None."""
     for name in ['val_threshold_sweep_unconstrained.csv', 'val_threshold_sweep.csv']:
         p = run_dir / name
         if p.exists():
@@ -31,7 +21,6 @@ def find_unconstrained_val_sweep(run_dir: Path) -> Path | None:
 
 
 def get_best_unconstrained_per_run(run_dir: Path, model: str) -> dict | None:
-    """Get best (threshold, val_f1) for this run from unconstrained sweep."""
     path = find_unconstrained_val_sweep(run_dir)
     if not path:
         return None
@@ -65,7 +54,7 @@ def select_unconstrained_best_config():
     for model in models:
         model_dir = OUTPUTS / model
         if not model_dir.exists():
-            print(f"[WARN] No outputs for {model}")
+            print(f"warn: No outputs for {model}")
             continue
         global_best = None
         for run_dir in model_dir.rglob('seed_42'):
@@ -103,7 +92,7 @@ def write_config_csv(best_per_model: dict, out_path: Path):
 
 def run_probe_only_metrics(config_csv: Path, output_dir: Path):
     """Run compute_feb8_probe_only_metrics with custom config."""
-    script = BASE / 'feb8/scripts/evaluation/compute_feb8_probe_only_metrics.py'
+    script = REPO_ROOT / 'code' / 'evaluation' / 'compute_feb8_probe_only_metrics.py'
     cmd = [
         sys.executable, str(script),
         '--config-csv', str(config_csv),
@@ -115,23 +104,24 @@ def run_probe_only_metrics(config_csv: Path, output_dir: Path):
 
 
 def main():
-    MARCH1.mkdir(parents=True, exist_ok=True)
-    config_csv = MARCH1 / 'final_selected_config_unconstrained.csv'
-    output_dir = MARCH1
+    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+    METRICS_DIR.mkdir(parents=True, exist_ok=True)
+    config_csv = CONFIG_DIR / 'final_selected_config_unconstrained.csv'
+    output_dir = METRICS_DIR
 
     print("=" * 60)
-    print("Selecting best config (unconstrained only) per model")
+    print("best unconstrained config per model")
     print("=" * 60)
     best_per_model = select_unconstrained_best_config()
     if not best_per_model:
-        print("[ERROR] No configs found")
+        print("error: No configs found")
         return 1
 
     write_config_csv(best_per_model, config_csv)
     print(f"\nWrote config: {config_csv}")
 
     print("\n" + "=" * 60)
-    print("Running probe_only metrics for TS0/NEW")
+    print("compute_feb8_probe_only_metrics (TS0/NEW)")
     print("=" * 60)
     run_probe_only_metrics(config_csv, output_dir)
 
@@ -139,7 +129,7 @@ def main():
     test_path = output_dir / 'final_test_metrics.csv'
     new_path = output_dir / 'final_new_metrics.csv'
     if not test_path.exists() or not new_path.exists():
-        print("[ERROR] TS0/NEW results not found")
+        print("error: TS0/NEW results not found")
         return 1
 
     ts0 = {}
@@ -152,7 +142,7 @@ def main():
             new[row['model']] = row
 
     # Write summary table
-    summary_path = MARCH1 / 'unconstrained_results_summary.csv'
+    summary_path = METRICS_DIR / 'unconstrained_results_summary.csv'
     with open(summary_path, 'w', newline='') as f:
         fieldnames = [
             'model', 'layer', 'k', 'threshold', 'decoding_mode',

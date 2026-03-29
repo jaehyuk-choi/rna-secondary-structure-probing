@@ -1,10 +1,10 @@
 #!/bin/bash
-# Run probe_only metrics with unconstrained config.
-# Usage: bash run_probe_only.sh
-# Requires: conda activate rna_probe
+# Unconstrained probe-only metrics → results/metrics.
 
-cd /projects/u6cg/jay/dissertations
-python feb8/scripts/evaluation/compute_feb8_probe_only_metrics.py \
-  --config-csv march1/final_selected_config_unconstrained.csv \
-  --checkpoint-base feb8/results_updated/outputs \
-  --output-dir march1
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+python "$REPO_ROOT/code/evaluation/compute_feb8_probe_only_metrics.py" \
+  --config-csv "$REPO_ROOT/configs/final_selected_config_unconstrained.csv" \
+  --checkpoint-base "$REPO_ROOT/results/outputs" \
+  --output-dir "$REPO_ROOT/results/metrics"

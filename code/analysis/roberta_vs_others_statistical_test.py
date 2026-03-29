@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-"""
-Statistical comparison: RoBERTa vs other models (ERNIE, RNAFM, RiNALMo, One-hot, RNABERT).
-Paired tests by sequence. Uses best config (filters by final_selected_config).
-"""
+"""Paired per-seq tests: RoBERTa vs each other model (best_config_val_f1 rows)."""
 
 import csv
 from pathlib import Path
@@ -15,13 +12,11 @@ try:
 except ImportError:
     HAS_SCIPY = False
 
-MARCH1 = Path(__file__).resolve().parents[1]
-OUT_DIR = MARCH1 / 'figures' / 'roberta_significance'
+REPO_ROOT = Path(__file__).resolve().parents[2]
+OUT_DIR = REPO_ROOT / 'results' / 'statistics'
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-FEB8 = MARCH1.parent / 'feb8/results_updated/summary'
-MARCH1_DATA = MARCH1 / 'data'
-BEST_CONFIG_PATH = FEB8 / 'final_selected_config.csv'
+BEST_CONFIG_PATH = REPO_ROOT / 'configs' / 'best_config_val_f1.csv'
 
 MODELS = ['roberta', 'ernie', 'rnafm', 'rinalmo', 'onehot', 'rnabert']
 MODEL_LABELS = {'roberta': 'RoBERTa', 'ernie': 'ERNIE', 'rnafm': 'RNAFM', 'rinalmo': 'RiNALMo',
@@ -29,10 +24,9 @@ MODEL_LABELS = {'roberta': 'RoBERTa', 'ernie': 'ERNIE', 'rnafm': 'RNAFM', 'rinal
 
 
 def _per_seq_paths():
-    ts = MARCH1_DATA / 'ts_per_sequence_metrics.csv'
-    new = MARCH1_DATA / 'new_per_sequence_metrics.csv'
-    return (ts if ts.exists() else FEB8 / 'ts_per_sequence_metrics.csv',
-            new if new.exists() else FEB8 / 'new_per_sequence_metrics.csv')
+    ts = REPO_ROOT / 'results' / 'per_sequence' / 'ts_per_sequence_metrics.csv'
+    new = REPO_ROOT / 'results' / 'per_sequence' / 'new_per_sequence_metrics.csv'
+    return ts, new
 
 
 def load_best_config():
@@ -105,8 +99,7 @@ def sig_str(p):
 def main():
     ts_path, new_path = _per_seq_paths()
     if not ts_path.exists() or not new_path.exists():
-        print("Per-sequence metrics not found. Run:")
-        print("  python feb8/scripts/evaluation/compute_feb8_probe_only_metrics.py --per-sequence")
+        print("Per-sequence metrics not found.")
         return 1
     best_cfg = load_best_config()
     ts_data = load_pivot(ts_path, best_cfg)
@@ -114,7 +107,6 @@ def main():
     n_ts_roberta = sum(1 for v in ts_data.values() if 'roberta' in v)
     if n_ts_roberta < 10:
         print("WARNING: per_sequence does not have best config for RoBERTa.")
-        print("Run: python feb8/scripts/evaluation/compute_feb8_probe_only_metrics.py --per-sequence")
         return 1
 
     other_models = [m for m in MODELS if m != 'roberta']  # RoBERTa vs all others including ERNIE

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compute per-sequence F1 and list ground truth pairs for probe heatmap sequences."""
+"""Per-seq F1 + GT pairs for heatmap IDs (uses best_config_val_f1)."""
 
 import ast
 import csv
@@ -9,13 +9,13 @@ from pathlib import Path
 import numpy as np
 import torch
 
-sys.path.insert(0, '/projects/u6cg/jay/dissertations/jan22')
+REPO_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from utils.evaluation import prob_to_pairs, create_canonical_mask
-from scripts.generation.generate_base_pairs import load_probe_matrix
+from probe_inference.generate_base_pairs import load_probe_matrix
 
-DATA = Path('/projects/u6cg/jay/dissertations/data')
-FEB8 = Path('/projects/u6cg/jay/dissertations/feb8/results_updated')
-BEST_CONFIG = FEB8 / 'summary/final_selected_config.csv'
+DATA = REPO_ROOT / 'data'
+BEST_CONFIG = REPO_ROOT / 'configs' / 'best_config_val_f1.csv'
 
 MODEL_EMBED = {'ernie': 'RNAErnie', 'roberta': 'RoBERTa', 'rnabert': 'RNABERT', 'rnafm': 'RNAFM', 'onehot': 'Onehot'}
 MODEL_LABELS = {'ernie': 'ERNIE-RNA', 'roberta': 'RoBERTa', 'rnabert': 'RNABERT', 'rnafm': 'RNAFM', 'onehot': 'One-hot'}
@@ -43,7 +43,7 @@ def get_embedding_path(seq_id, model, layer):
 
 
 def get_probe_path(model, layer, k):
-    return FEB8 / 'outputs' / model / f'layer_{layer}' / f'k_{k}' / 'seed_42' / 'best.pt'
+    return REPO_ROOT / 'results' / 'outputs' / model / f'layer_{layer}' / f'k_{k}' / 'seed_42' / 'best.pt'
 
 
 def compute_P(emb, B):
@@ -81,7 +81,7 @@ def compute_f1_with_matches(pred_pairs, true_pairs, shift=1):
 
 def main():
     bpRNA = {}
-    with open(DATA / 'bpRNA.csv') as f:
+    with open(DATA / 'metadata' / 'bpRNA.csv') as f:
         for r in csv.DictReader(f):
             bpRNA[r['id']] = {'seq': r['sequence'], 'pairs': r['base_pairs']}
 
@@ -113,7 +113,7 @@ def main():
             emb_path = get_embedding_path(seq_id, model, layer)
             ckpt_path = get_probe_path(model, layer, k)
             if not emb_path.exists() or not ckpt_path.exists():
-                print(f"  [WARN] {model}: missing emb or ckpt")
+                print(f"  warn: {model}: missing emb or ckpt")
                 continue
 
             emb = np.load(emb_path)

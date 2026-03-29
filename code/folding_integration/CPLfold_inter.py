@@ -1,18 +1,4 @@
-"""
-CPLfold_inter.py
-RNA Secondary Structure Prediction with Base Pair Bonus
-
-LinearFold-based RNA secondary-structure prediction with optional base-pair bonus matrices.
-
-Features:
-1. Flat 1D arrays instead of 3D (better cache locality)
-2. Inlined scoring functions for zero call overhead
-3. O(n log n) beam pruning with deterministic sorting
-4. Vienna mode (lv=True) and CONTRAfold mode (lv=False)
-5. Base pair bonus matrix support
-
-author: Ke Wang
-"""
+"""LinearFold-style folding with optional base-pair bonus (Vienna / CONTRAfold). Ke Wang."""
 
 import sys
 import time

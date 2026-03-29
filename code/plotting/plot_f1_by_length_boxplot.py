@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-"""
-Box plot: F1 by sequence length (TS0/NEW), Best config per model.
-Bins: <100, 100-200, 200-400, 400+
-"""
+"""TS0/NEW F1 boxplots by length bin for best config per model."""
 
 import csv
 from pathlib import Path
@@ -16,12 +13,10 @@ plt.rcParams.update({
     'figure.dpi': 150, 'savefig.dpi': 300, 'savefig.bbox': 'tight',
 })
 
-MARCH1 = Path(__file__).resolve().parents[1]
-FIG_DIR = MARCH1 / 'figures' / 'length_boxplot'
+REPO_ROOT = Path(__file__).resolve().parents[2]
+FIG_DIR = REPO_ROOT / 'figures' / 'main' / 'length_boxplot'
 FIG_DIR.mkdir(parents=True, exist_ok=True)
-FEB8 = MARCH1.parent / 'feb8/results_updated/summary'
-MARCH1_DATA = MARCH1 / 'data'
-BEST_CONFIG_PATH = FEB8 / 'final_selected_config.csv'
+BEST_CONFIG_PATH = REPO_ROOT / 'configs' / 'best_config_val_f1.csv'
 
 # [lo, hi): 100-200 excludes 200; 200-400 excludes 400. Labels: non-overlapping.
 LEN_BINS = [('<100', 0, 100), ('100–199', 100, 200), ('200–399', 200, 400), ('400+', 400, 999999)]
@@ -34,10 +29,9 @@ LIGHT_ORANGE = (255/255, 245/255, 242/255)
 
 
 def _per_seq_paths():
-    ts = MARCH1_DATA / 'ts_per_sequence_metrics.csv'
-    new = MARCH1_DATA / 'new_per_sequence_metrics.csv'
-    return (ts if ts.exists() else FEB8 / 'ts_per_sequence_metrics.csv',
-            new if new.exists() else FEB8 / 'new_per_sequence_metrics.csv')
+    ts = REPO_ROOT / 'results' / 'per_sequence' / 'ts_per_sequence_metrics.csv'
+    new = REPO_ROOT / 'results' / 'per_sequence' / 'new_per_sequence_metrics.csv'
+    return ts, new
 
 
 def get_len_bin(length):
@@ -120,8 +114,7 @@ def plot_boxplot(ax, data, title):
 def main():
     ts_path, new_path = _per_seq_paths()
     if not ts_path.exists() or not new_path.exists():
-        print("Per-sequence metrics not found. Run:")
-        print("  python feb8/scripts/evaluation/compute_feb8_probe_only_metrics.py --per-sequence")
+        print("Per-sequence metrics not found.")
         return 1
     best_cfg = load_best_config()
     ts_data = load_partition(ts_path, best_cfg)

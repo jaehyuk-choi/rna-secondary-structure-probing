@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
-"""
-Aggregate CPLfold Val/TS0/NEW results:
-1. Alpha=0 vs optimal alpha on Val
-2. Val optimal alpha applied to TS0, NEW
-"""
+"""Roll up Val α=0 vs best-α and TS0/NEW metrics at Val-optimal α."""
 import csv
 from collections import defaultdict
 from pathlib import Path
@@ -60,18 +56,20 @@ def get_best_alpha_and_a0(csv_dir):
     return out_best, out_a0
 
 def main():
-    base = Path('/projects/u6cg/jay/dissertations')
+    REPO_ROOT = Path(__file__).resolve().parents[2]
+    folding = REPO_ROOT / 'results' / 'folding'
+
     # Val: feb23 feb8 config (complete)
-    val_v = base / 'feb23/results_vl0_feb8'
-    val_c = base / 'feb23/results_vl0_contrafold_feb8'
+    val_v = folding / 'results_vl0_feb8'
+    val_c = folding / 'results_vl0_contrafold_feb8'
     best_v, a0_v = get_best_alpha_and_a0(val_v)
     best_c, a0_c = get_best_alpha_and_a0(val_c)
 
     # TS0, NEW: feb8 (jan22 config, no rnabert)
-    ts0_v = base / 'feb8/results_ts0'
-    ts0_c = base / 'feb8/results_ts0_contrafold'
-    new_v = base / 'feb8/results_new'
-    new_c = base / 'feb8/results_new_contrafold'
+    ts0_v = folding / 'results_ts0'
+    ts0_c = folding / 'results_ts0_contrafold'
+    new_v = folding / 'results_new'
+    new_c = folding / 'results_new_contrafold'
 
     models_ts0_new = [m for m in models if m != 'rnabert']  # feb8 TS0/NEW no rnabert
 

@@ -1,13 +1,5 @@
 #!/usr/bin/env python3
-"""
-Run CPLfold alpha sweep for TS0 and NEW partitions, with Vienna and Contrafold.
-
-Calls feb8/scripts/run_split_pipeline.py for each:
-  - TS0 + Vienna, TS0 + Contrafold
-  - NEW + Vienna, NEW + Contrafold
-
-For each model × backend combination.
-"""
+"""Drive run_split_pipeline for TS0/NEW × Vienna/Contrafold (optional VL0-optimal α)."""
 
 import argparse
 import subprocess
@@ -16,28 +8,29 @@ from pathlib import Path
 
 
 def main():
+    REPO_ROOT = Path(__file__).resolve().parents[2]
     ap = argparse.ArgumentParser()
-    ap.add_argument('--base-pairs-dir', default='/projects/u6cg/jay/dissertations/feb25/base_pairs_thresholded')
-    ap.add_argument('--output-dir', default='/projects/u6cg/jay/dissertations/feb25/results_thresholded_ts0_new')
-    ap.add_argument('--splits-csv', default='/projects/u6cg/jay/dissertations/data/bpRNA_splits.csv')
-    ap.add_argument('--bpRNA-csv', default='/projects/u6cg/jay/dissertations/data/bpRNA.csv')
-    ap.add_argument('--config-csv', default='/projects/u6cg/jay/dissertations/feb8/results_updated/summary/final_selected_config.csv')
+    ap.add_argument('--base-pairs-dir', default=str(REPO_ROOT / 'results' / 'folding' / 'base_pairs_thresholded'))
+    ap.add_argument('--output-dir', default=str(REPO_ROOT / 'results' / 'folding' / 'results_thresholded_ts0_new'))
+    ap.add_argument('--splits-csv', default=str(REPO_ROOT / 'data' / 'splits' / 'bpRNA_splits.csv'))
+    ap.add_argument('--bpRNA-csv', default=str(REPO_ROOT / 'data' / 'metadata' / 'bpRNA.csv'))
+    ap.add_argument('--config-csv', default=str(REPO_ROOT / 'configs' / 'final_selected_config_unconstrained.csv'))
     ap.add_argument('--alpha-start', type=float, default=0.0)
     ap.add_argument('--alpha-end', type=float, default=2.0)
     ap.add_argument('--alpha-step', type=float, default=0.02)
-    ap.add_argument('--val-results-dir', default='/projects/u6cg/jay/dissertations/feb23/results_vl0_feb8',
+    ap.add_argument('--val-results-dir', default=str(REPO_ROOT / 'results' / 'folding' / 'results_vl0_feb8'),
                     help='VL0 Vienna dir for optimal alpha. If set, run only at optimal alpha (no sweep).')
-    ap.add_argument('--val-contrafold-dir', default='/projects/u6cg/jay/dissertations/feb23/results_vl0_contrafold_feb8',
+    ap.add_argument('--val-contrafold-dir', default=str(REPO_ROOT / 'results' / 'folding' / 'results_vl0_contrafold_feb8'),
                     help='VL0 Contrafold dir for optimal alpha.')
     ap.add_argument('--num-workers', type=int, default=20)
     ap.add_argument('--models', nargs='+', default=['ernie', 'roberta', 'rnafm', 'rinalmo', 'onehot'])
     ap.add_argument('--partitions', nargs='+', default=['TS0', 'new'])
-    ap.add_argument('--run-script', default='/projects/u6cg/jay/dissertations/feb8/scripts/run_split_pipeline.py')
+    ap.add_argument('--run-script', default=str(REPO_ROOT / 'code' / 'probe_training' / 'run_split_pipeline.py'))
     args = ap.parse_args()
 
     run_script = Path(args.run_script)
     if not run_script.exists():
-        print(f"[ERROR] run_split_pipeline not found: {run_script}")
+        print(f"error: run_split_pipeline not found: {run_script}")
         return 1
 
     base_dir = Path(args.base_pairs_dir)
@@ -84,9 +77,9 @@ def main():
 
         ret = subprocess.run(cmd)
         if ret.returncode != 0:
-            print(f"[WARN] {partition} + {backend} returned {ret.returncode}")
+            print(f"warn: {partition} + {backend} returned {ret.returncode}")
 
-    print(f"\n[INFO] All CPLfold runs complete. Output: {out_root}")
+    print(f"\ndone: {out_root}")
     return 0
 
 

@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-"""
-Layer-wise Val F1: line plot by model.
-Output: layer_wise_val_f1.png (original), layer_wise_val_f1_lightorange.png (light orange bg)
-"""
+"""Val F1 vs layer from layer_wise_val_f1.csv."""
 
 import csv
 from pathlib import Path
@@ -10,9 +7,9 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
-MARCH1 = Path(__file__).resolve().parents[1]
-DATA_PATH = MARCH1 / 'data' / 'layer_wise_val_f1.csv'
-OUT_DIR = MARCH1 / 'figures' / 'layer_k_comparison'
+REPO_ROOT = Path(__file__).resolve().parents[2]
+DATA_PATH = REPO_ROOT / 'results' / 'sweeps' / 'layer_wise_val_f1.csv'
+OUT_DIR = REPO_ROOT / 'figures' / 'main' / 'layer_k_comparison'
 
 # Original colors (like k_comparison)
 MODEL_COLORS = {
@@ -74,13 +71,13 @@ def plot_layer_wise(rows, facecolor='white', out_name='layer_wise_val_f1.png'):
     plt.tight_layout()
     plt.savefig(out_path, dpi=150, bbox_inches='tight', facecolor=facecolor)
     plt.close()
-    print(f"[INFO] Saved {out_path}")
+    print(f"Saved {out_path}")
 
 
 def main():
     rows = load_data()
     if not rows:
-        print(f"[ERROR] No data in {DATA_PATH}")
+        print(f"error: No data in {DATA_PATH}")
         return 1
 
     # Original: white background

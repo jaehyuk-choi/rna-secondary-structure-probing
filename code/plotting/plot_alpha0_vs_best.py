@@ -1,17 +1,5 @@
 #!/usr/bin/env python3
-"""
-Visualize α=0 vs best α comparison (CPLfold results).
-
-Generates:
-  1. fig1_grouped_bar.png - mean F1: α=0 vs best α by model × partition
-  2. fig2_pct_improvement_heatmap.png - %Δ improvement heatmap
-  3. fig3_best_alpha.png - optimal α per model × backend
-  4. fig4_significance_summary.png - significance indicators
-  5. fig5_combined_panel.png - 2×2 summary panel
-  6. fig6_line_vienna.png - line chart: TS0→NEW F1 by model (Vienna)
-  7. fig7_line_contrafold.png - line chart: TS0→NEW F1 by model (Contrafold)
-  8. fig8_line_both.png - both backends in 2 subplots
-"""
+"""α=0 vs best-α CPLfold figures (bars, heatmaps, lines, significance panel)."""
 
 import csv
 from pathlib import Path
@@ -19,9 +7,9 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
-MARCH1 = Path(__file__).resolve().parents[1]
-DATA_PATH = MARCH1 / 'data' / 'alpha0_vs_best_full.csv'
-FIG_DIR = MARCH1 / 'figures'
+REPO_ROOT = Path(__file__).resolve().parents[2]
+DATA_PATH = REPO_ROOT / 'results' / 'folding' / 'alpha0_vs_best_full.csv'
+FIG_DIR = REPO_ROOT / 'figures' / 'main'
 
 # Model order for consistent display
 MODEL_ORDER = ['ernie', 'roberta', 'rnafm', 'rinalmo', 'onehot', 'rnabert']
@@ -77,7 +65,7 @@ def fig1_grouped_bar(rows):
     plt.tight_layout()
     plt.savefig(FIG_DIR / 'fig1_grouped_bar.png', dpi=150, bbox_inches='tight')
     plt.close()
-    print(f"[INFO] Saved {FIG_DIR / 'fig1_grouped_bar.png'}")
+    print(f"Saved {FIG_DIR / 'fig1_grouped_bar.png'}")
 
 
 def fig2_heatmap(rows):
@@ -112,7 +100,7 @@ def fig2_heatmap(rows):
     plt.tight_layout()
     plt.savefig(FIG_DIR / 'fig2_pct_improvement_heatmap.png', dpi=150, bbox_inches='tight')
     plt.close()
-    print(f"[INFO] Saved {FIG_DIR / 'fig2_pct_improvement_heatmap.png'}")
+    print(f"Saved {FIG_DIR / 'fig2_pct_improvement_heatmap.png'}")
 
 
 def fig3_best_alpha(rows):
@@ -141,7 +129,7 @@ def fig3_best_alpha(rows):
     plt.tight_layout()
     plt.savefig(FIG_DIR / 'fig3_best_alpha.png', dpi=150, bbox_inches='tight')
     plt.close()
-    print(f"[INFO] Saved {FIG_DIR / 'fig3_best_alpha.png'}")
+    print(f"Saved {FIG_DIR / 'fig3_best_alpha.png'}")
 
 
 def fig4_significance(rows):
@@ -185,7 +173,7 @@ def fig4_significance(rows):
     plt.tight_layout()
     plt.savefig(FIG_DIR / 'fig4_significance_summary.png', dpi=150, bbox_inches='tight')
     plt.close()
-    print(f"[INFO] Saved {FIG_DIR / 'fig4_significance_summary.png'}")
+    print(f"Saved {FIG_DIR / 'fig4_significance_summary.png'}")
 
 
 def fig5_combined(rows):
@@ -263,7 +251,7 @@ def fig5_combined(rows):
     plt.tight_layout()
     plt.savefig(FIG_DIR / 'fig5_combined_panel.png', dpi=150, bbox_inches='tight')
     plt.close()
-    print(f"[INFO] Saved {FIG_DIR / 'fig5_combined_panel.png'}")
+    print(f"Saved {FIG_DIR / 'fig5_combined_panel.png'}")
 
 
 # Line chart colors (distinct per model)
@@ -295,7 +283,7 @@ def fig6_line_vienna(rows):
     plt.tight_layout()
     plt.savefig(FIG_DIR / 'fig6_line_vienna.png', dpi=150, bbox_inches='tight')
     plt.close()
-    print(f"[INFO] Saved {FIG_DIR / 'fig6_line_vienna.png'}")
+    print(f"Saved {FIG_DIR / 'fig6_line_vienna.png'}")
 
 
 def fig7_line_contrafold(rows):
@@ -323,7 +311,7 @@ def fig7_line_contrafold(rows):
     plt.tight_layout()
     plt.savefig(FIG_DIR / 'fig7_line_contrafold.png', dpi=150, bbox_inches='tight')
     plt.close()
-    print(f"[INFO] Saved {FIG_DIR / 'fig7_line_contrafold.png'}")
+    print(f"Saved {FIG_DIR / 'fig7_line_contrafold.png'}")
 
 
 def fig8_line_both(rows):
@@ -356,14 +344,14 @@ def fig8_line_both(rows):
     plt.tight_layout()
     plt.savefig(FIG_DIR / 'fig8_line_both.png', dpi=150, bbox_inches='tight')
     plt.close()
-    print(f"[INFO] Saved {FIG_DIR / 'fig8_line_both.png'}")
+    print(f"Saved {FIG_DIR / 'fig8_line_both.png'}")
 
 
 def main():
     FIG_DIR.mkdir(parents=True, exist_ok=True)
     rows = load_data()
     if not rows:
-        print("[ERROR] No data loaded")
+        print("error: No data loaded")
         return 1
     fig1_grouped_bar(rows)
     fig2_heatmap(rows)
@@ -373,7 +361,7 @@ def main():
     fig6_line_vienna(rows)
     fig7_line_contrafold(rows)
     fig8_line_both(rows)
-    print("[INFO] All figures saved to", FIG_DIR)
+    print("figures ->", FIG_DIR)
     return 0
 
 

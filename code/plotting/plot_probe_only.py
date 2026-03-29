@@ -1,11 +1,5 @@
 #!/usr/bin/env python3
-"""
-Visualize probe-only (unconstrained) results.
-
-Generates:
-  1. probe_f1_comparison.png - TS0 vs NEW F1 by model
-  2. probe_precision_recall.png - Precision vs Recall scatter
-"""
+"""Probe-only TS0 vs NEW F1 and precision–recall from unconstrained_results_summary (or final_* fallback)."""
 
 import csv
 from pathlib import Path
@@ -13,12 +7,11 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
-MARCH1 = Path(__file__).resolve().parents[1]
-DATA_PATH = MARCH1 / 'unconstrained_results_summary.csv'
-# Fallback: final_test_metrics / final_new_metrics if summary is sparse
-FINAL_TS0 = MARCH1 / 'final_test_metrics.csv'
-FINAL_NEW = MARCH1 / 'final_new_metrics.csv'
-FIG_DIR = MARCH1 / 'figures'
+REPO_ROOT = Path(__file__).resolve().parents[2]
+DATA_PATH = REPO_ROOT / 'results' / 'metrics' / 'unconstrained_results_summary.csv'
+FINAL_TS0 = REPO_ROOT / 'results' / 'metrics' / 'final_test_metrics.csv'
+FINAL_NEW = REPO_ROOT / 'results' / 'metrics' / 'final_new_metrics.csv'
+FIG_DIR = REPO_ROOT / 'figures' / 'main'
 
 MODEL_LABELS = {'ernie': 'ERNIE', 'roberta': 'RoBERTa', 'rnafm': 'RNAFM',
                 'rinalmo': 'RiNALMo', 'onehot': 'One-hot', 'rnabert': 'RNABERT'}
@@ -46,7 +39,7 @@ def fig_probe_f1(rows):
     """TS0 vs NEW F1 by model."""
     rows = [r for r in rows if not np.isnan(r.get('ts0_f1', np.nan)) and not np.isnan(r.get('new_f1', np.nan))]
     if not rows:
-        print("[WARN] No valid probe F1 data")
+        print("warn: No valid probe F1 data")
         return
 
     models = [r['model'] for r in rows]
@@ -67,14 +60,14 @@ def fig_probe_f1(rows):
     plt.tight_layout()
     plt.savefig(FIG_DIR / 'probe_f1_comparison.png', dpi=150, bbox_inches='tight')
     plt.close()
-    print(f"[INFO] Saved {FIG_DIR / 'probe_f1_comparison.png'}")
+    print(f"Saved {FIG_DIR / 'probe_f1_comparison.png'}")
 
 
 def fig_precision_recall(rows):
     """Precision vs Recall scatter by model."""
     rows = [r for r in rows if not np.isnan(r.get('ts0_precision', np.nan)) and not np.isnan(r.get('ts0_recall', np.nan))]
     if not rows:
-        print("[WARN] No valid precision/recall data")
+        print("warn: No valid precision/recall data")
         return
 
     fig, ax = plt.subplots(figsize=(8, 6))
@@ -91,7 +84,7 @@ def fig_precision_recall(rows):
     plt.tight_layout()
     plt.savefig(FIG_DIR / 'probe_precision_recall.png', dpi=150, bbox_inches='tight')
     plt.close()
-    print(f"[INFO] Saved {FIG_DIR / 'probe_precision_recall.png'}")
+    print(f"Saved {FIG_DIR / 'probe_precision_recall.png'}")
 
 
 def load_from_final_metrics():
@@ -124,11 +117,11 @@ def main():
     if len(valid) < 2:
         rows = load_from_final_metrics()
     if not rows:
-        print("[ERROR] No data loaded")
+        print("error: No data loaded")
         return 1
     fig_probe_f1(rows)
     fig_precision_recall(rows)
-    print("[INFO] Probe-only figures saved to", FIG_DIR)
+    print("figures ->", FIG_DIR)
     return 0
 
 

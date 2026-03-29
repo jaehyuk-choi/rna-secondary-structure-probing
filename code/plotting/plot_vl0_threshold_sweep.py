@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-"""
-Validation (VL0): F1 vs decoding threshold τ (0.5–0.95).
-Line plot per model, best config (layer, k, decoding_mode).
-"""
+"""VL0 F1 vs τ lines using final_selected_config_unconstrained.csv."""
 
 import csv
 from pathlib import Path
@@ -10,11 +7,10 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
-MARCH1 = Path(__file__).resolve().parents[1]
-FIG_DIR = MARCH1 / 'figures'
-FEB8 = Path('/projects/u6cg/jay/dissertations/feb8/results_updated')
-BEST_CONFIG = FEB8 / 'summary/final_selected_config.csv'
-OUTPUTS = FEB8 / 'outputs'
+REPO_ROOT = Path(__file__).resolve().parents[2]
+FIG_DIR = REPO_ROOT / 'figures'
+BEST_CONFIG = REPO_ROOT / 'configs' / 'final_selected_config_unconstrained.csv'
+OUTPUTS = REPO_ROOT / 'results' / 'outputs'
 
 MODEL_ORDER = ['ernie', 'roberta', 'rnafm', 'rinalmo', 'onehot', 'rnabert']
 MODEL_LABELS = {'ernie': 'ERNIE', 'roberta': 'RoBERTa', 'rnafm': 'RNAFM',
@@ -74,7 +70,7 @@ def main():
                 continue
             p = sweep_path(model, best_cfg[model])
             if not p.exists():
-                print(f"[WARN] Missing {p}")
+                print(f"warn: Missing {p}")
                 continue
             threshs, f1s = load_sweep_data(p)
             tau_star = best_cfg[model]['threshold']
@@ -99,7 +95,7 @@ def main():
         out_path = FIG_DIR / out_name
         plt.savefig(out_path, dpi=150, bbox_inches='tight', facecolor=facecolor)
         plt.close()
-        print(f"[INFO] Saved {out_path}")
+        print(f"Saved {out_path}")
 
     return 0
 

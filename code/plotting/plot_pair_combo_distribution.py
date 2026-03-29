@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-"""
-Pair combination distribution: One-hot vs RiNALMo.
-Bar chart comparing predicted pair type rates (WC+GU highlighted).
-"""
+"""One-hot vs RiNALMo pair-type rate bars (WC/GU emphasis)."""
 
 import csv
 from pathlib import Path
@@ -10,9 +7,9 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
-MARCH1 = Path(__file__).resolve().parents[1]
-DATA_DIR = MARCH1 / 'data'
-FIG_DIR = MARCH1 / 'figures' / 'pair_combo'
+REPO_ROOT = Path(__file__).resolve().parents[2]
+DATA_DIR = REPO_ROOT / 'results' / 'tables'
+FIG_DIR = REPO_ROOT / 'figures' / 'main' / 'pair_combo'
 OUT_WHITE = FIG_DIR / 'pair_combo_distribution.png'
 OUT_LIGHT = FIG_DIR / 'pair_combo_distribution_lightorange.png'
 
@@ -40,7 +37,7 @@ def main():
     onehot_path = DATA_DIR / 'onehot_pair_combo_distribution.csv'
     rinalmo_path = DATA_DIR / 'rinalmo_pair_combo_distribution.csv'
     if not onehot_path.exists() or not rinalmo_path.exists():
-        print("[ERROR] Missing onehot_pair_combo_distribution.csv or rinalmo_pair_combo_distribution.csv")
+        print("error: Missing onehot_pair_combo_distribution.csv or rinalmo_pair_combo_distribution.csv")
         return 1
 
     onehot_rates = load_model_data(onehot_path)
@@ -80,7 +77,7 @@ def main():
         plt.tight_layout()
         plt.savefig(out_path, dpi=150, bbox_inches='tight', facecolor=facecolor)
         plt.close()
-        print(f"[INFO] Saved {out_path}")
+        print(f"Saved {out_path}")
 
     return 0
 

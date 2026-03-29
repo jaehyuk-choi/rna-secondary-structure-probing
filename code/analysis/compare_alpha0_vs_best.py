@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
-"""Compare mean F1 at alpha=0 vs best alpha for all partitions."""
+"""Quick α=0 vs best-α mean F1 from detailed_results CSVs (no per-seq tests)."""
 import csv
 from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
 
 def load_detailed(path):
     if not Path(path).exists(): return []
@@ -27,12 +29,12 @@ VAL_OPT = {
     ('rnabert','Vienna'):0.14, ('rnabert','Contrafold'):0.56,
 }
 
-FEB25 = Path('/projects/u6cg/jay/dissertations/feb25/results_thresholded_ts0_new')
+FEB25 = REPO_ROOT / 'results' / 'folding'
 FEB8 = {
-    'ts0_vienna': Path('/projects/u6cg/jay/dissertations/feb8/results_ts0'),
-    'ts0_contrafold': Path('/projects/u6cg/jay/dissertations/feb8/results_ts0_contrafold'),
-    'new_vienna': Path('/projects/u6cg/jay/dissertations/feb8/results_new'),
-    'new_contrafold': Path('/projects/u6cg/jay/dissertations/feb8/results_new_contrafold'),
+    'ts0_vienna': REPO_ROOT / 'results' / 'sweeps' / 'results_ts0',
+    'ts0_contrafold': REPO_ROOT / 'results' / 'sweeps' / 'results_ts0_contrafold',
+    'new_vienna': REPO_ROOT / 'results' / 'sweeps' / 'results_new',
+    'new_contrafold': REPO_ROOT / 'results' / 'sweeps' / 'results_new_contrafold',
 }
 models = ['ernie', 'roberta', 'rnafm', 'rinalmo', 'onehot', 'rnabert']
 partitions = [

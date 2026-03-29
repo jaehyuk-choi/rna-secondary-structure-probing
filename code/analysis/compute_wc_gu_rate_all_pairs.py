@@ -1,15 +1,10 @@
 #!/usr/bin/env python3
-"""
-Compute the proportion of WC and WC+GU pairs among all candidate pairs with i<j.
-
-For each sequence, count every pair (i, j) with i<j.
-A pair is considered canonical if `(base_i, base_j)` is
-- Watson-Crick: AU, UA, CG, GC
-- wobble: GU, UG
-"""
+"""Sequence-level fraction of WC-only vs WC+GU among all i<j base pairs (composition baseline)."""
 
 import csv
 from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
 
 BASES = ['A', 'U', 'G', 'C']
 WC_ONLY = {('A','U'), ('U','A'), ('G','C'), ('C','G')}  # Watson-Crick only
@@ -17,7 +12,6 @@ WC_GU = WC_ONLY | {('G','U'), ('U','G')}  # WC + wobble
 
 
 def count_pairs(seq: str, pair_set: set) -> int:
-    """Count (i,j) with i<j where (seq[i], seq[j]) in pair_set. O(L) via suffix counts."""
     from collections import Counter
     partner = {}
     for b1, b2 in pair_set:
@@ -37,12 +31,12 @@ def count_pairs(seq: str, pair_set: set) -> int:
 
 def main():
     bpRNA = {}
-    with open('/projects/u6cg/jay/dissertations/data/bpRNA.csv') as f:
+    with open(REPO_ROOT / 'data' / 'metadata' / 'bpRNA.csv') as f:
         for row in csv.DictReader(f):
             bpRNA[row['id']] = row['sequence']
 
     seq_ids = []
-    with open('/projects/u6cg/jay/dissertations/data/bpRNA_splits.csv') as f:
+    with open(REPO_ROOT / 'data' / 'splits' / 'bpRNA_splits.csv') as f:
         for row in csv.DictReader(f):
             p = row.get('partition', '').strip().upper()
             if p in ('TS0', 'NEW'):
@@ -50,7 +44,7 @@ def main():
 
     by_partition = {'TS0': (0, 0, 0), 'NEW': (0, 0, 0)}  # total_pairs, wc_count, wc_gu_count
     partition_map = {}
-    with open('/projects/u6cg/jay/dissertations/data/bpRNA_splits.csv') as f:
+    with open(REPO_ROOT / 'data' / 'splits' / 'bpRNA_splits.csv') as f:
         for row in csv.DictReader(f):
             partition_map[row['id']] = row.get('partition', '').strip().upper()
 
@@ -67,7 +61,7 @@ def main():
             p, wc, wcg = by_partition[part]
             by_partition[part] = (p + n_pairs, wc + wc_count, wcg + wc_gu_count)
 
-    out_dir = Path('/projects/u6cg/jay/dissertations/march1/data')
+    out_dir = REPO_ROOT / 'results' / 'statistics'
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # Table format: Model, TS0_WC, TS0_WC+GU, NEW_WC, NEW_WC+GU (percent)
@@ -106,7 +100,7 @@ def main():
     print("--- Baseline: WC / WC+GU among all candidate pairs with i<j ---")
     print(f"  TS0: WC {100*ts0_wc/ts0_pairs:.1f}%, WC+GU {ts0_wc_gu:,} / {ts0_pairs:,} = {ts0_wc_gu_rate:.2f}%")
     print(f"  NEW: WC {100*new_wc/new_pairs:.1f}%, WC+GU {new_wc_gu:,} / {new_pairs:,} = {new_wc_gu_rate:.2f}%")
-    print(f"\nTable format (baseline row):")
+    print(f"\nbaseline row:")
     print(f"  {baseline_row['model']} | TS0 WC {baseline_row['ts0_wc_pct']} | TS0 WC+GU {baseline_row['ts0_wc_gu_pct']} | NEW WC {baseline_row['new_wc_pct']} | NEW WC+GU {baseline_row['new_wc_gu_pct']}")
     print(f"\nSaved {table_path}, {raw_path}")
 

@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-"""
-Probe Best vs Unconstrained: grouped bar chart (TS0/NEW).
-Output: fig1_grouped_bar_f1_lightorange.png — light orange bg, no caption.
-"""
+"""Grouped bars TS0/NEW from probe_unconstrained_vs_best_comparison.csv."""
 
 import csv
 from pathlib import Path
@@ -10,9 +7,9 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
-MARCH1 = Path(__file__).resolve().parents[1]
-DATA_PATH = MARCH1 / 'probe_unconstrained_vs_best_comparison.csv'
-OUT_DIR = MARCH1 / 'figures' / 'probe_comparison'
+REPO_ROOT = Path(__file__).resolve().parents[2]
+DATA_PATH = REPO_ROOT / 'results' / 'metrics' / 'probe_unconstrained_vs_best_comparison.csv'
+OUT_DIR = REPO_ROOT / 'figures' / 'main' / 'probe_comparison'
 OUT_PATH = OUT_DIR / 'fig1_grouped_bar_f1_lightorange.png'
 
 MODEL_ORDER = ['ernie', 'roberta', 'rnafm', 'rinalmo', 'onehot', 'rnabert']
@@ -46,7 +43,7 @@ def load_data():
 def main():
     rows = load_data()
     if not rows:
-        print(f"[ERROR] No data in {DATA_PATH}")
+        print(f"error: No data in {DATA_PATH}")
         return 1
 
     models = [r['model'] for r in rows]
@@ -77,7 +74,7 @@ def main():
     plt.tight_layout()
     plt.savefig(OUT_PATH, dpi=150, bbox_inches='tight', facecolor='white')
     plt.close()
-    print(f"[INFO] Saved {OUT_PATH}")
+    print(f"Saved {OUT_PATH}")
     return 0
 
 

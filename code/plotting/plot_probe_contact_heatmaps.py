@@ -1,21 +1,5 @@
 #!/usr/bin/env python3
-"""
-Structural probing contact map visualization.
-
-For selected RNA sequences from TS0, generates side-by-side heatmaps:
-- Left: Ground truth binary contact map (binary, upper triangle)
-- Right: Predicted score matrix P = sigmoid(z_i^T z_j) (continuous 0-1, "hot" colormap)
-- Optional: Third panel with overlay (--overlay): GT in blue, pred@τ in red
-
-Uses validation-selected best config (layer, k, τ) per model.
-Saves PDF and PNG at 300 DPI to figures/probe_heatmaps/.
-
-Requires: conda activate rna_probe (torch, matplotlib)
-
-Usage:
-  python scripts/plot_probe_contact_heatmaps.py --n-seq 3
-  python scripts/plot_probe_contact_heatmaps.py --seq-ids bpRNA_RFAM_22136 bpRNA_RFAM_21498 --overlay
-"""
+"""GT vs probe score heatmaps (optional GT/pred overlay) for TS0 seqs; best val config per model."""
 
 import argparse
 import ast
@@ -27,17 +11,16 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 
-sys.path.insert(0, '/projects/u6cg/jay/dissertations/jan22')
-from scripts.generation.generate_base_pairs import load_probe_matrix
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from probe_inference.generate_base_pairs import load_probe_matrix
 from utils.evaluation import prob_to_pairs, create_canonical_mask
 
 import warnings
 warnings.filterwarnings('ignore', category=UserWarning, module='torch')
 
-MARCH1 = Path(__file__).resolve().parents[1]
-DATA = Path('/projects/u6cg/jay/dissertations/data')
-FEB8 = Path('/projects/u6cg/jay/dissertations/feb8/results_updated')
-BEST_CONFIG = FEB8 / 'summary/final_selected_config.csv'
+REPO_ROOT = Path(__file__).resolve().parents[2]
+DATA = REPO_ROOT / 'data'
+BEST_CONFIG = REPO_ROOT / 'configs' / 'final_selected_config_unconstrained.csv'
 
 # Model -> (embedding_dir, layer from best config)
 MODEL_EMBED = {
@@ -99,7 +82,7 @@ def get_embedding_path(seq_id, model, layer):
 
 
 def get_probe_path(model, layer, k):
-    return FEB8 / 'outputs' / model / f'layer_{layer}' / f'k_{k}' / 'seed_42' / 'best.pt'
+    return REPO_ROOT / 'results' / 'outputs' / model / f'layer_{layer}' / f'k_{k}' / 'seed_42' / 'best.pt'
 
 
 def pairs_to_contact_map(pairs, L):
@@ -126,7 +109,7 @@ def _run_seq_figure(seq_id, out_dir, best_cfg, bpRNA, model_filter=None, suffix=
     suffix: appended to output filename, e.g. '_selected'.
     """
     if seq_id not in bpRNA:
-        print(f"[ERROR] {seq_id} not in bpRNA")
+        print(f"error: {seq_id} not in bpRNA")
         return 1
     seq = bpRNA[seq_id]['seq']
     pairs = ast.literal_eval(bpRNA[seq_id]['pairs'])
@@ -154,7 +137,7 @@ def _run_seq_figure(seq_id, out_dir, best_cfg, bpRNA, model_filter=None, suffix=
         emb_path = get_embedding_path(seq_id, model, layer)
         ckpt_path = get_probe_path(model, layer, k)
         if not emb_path.exists() or not ckpt_path.exists():
-            print(f"  [WARN] Missing data for {model}")
+            print(f"  warn: Missing data for {model}")
             continue
 
         emb = np.load(emb_path)
@@ -257,7 +240,7 @@ def _run_seq_figure(seq_id, out_dir, best_cfg, bpRNA, model_filter=None, suffix=
     for ext in ['png', 'pdf']:
         out_path = out_dir / f'{fname}.{ext}'
         fig.savefig(out_path, dpi=300, bbox_inches='tight')
-        print(f"[INFO] Saved {out_path}")
+        print(f"Saved {out_path}")
     plt.close()
     print(f"\nSequence: {seq_id}")
     return 0
@@ -266,11 +249,11 @@ def _run_seq_figure(seq_id, out_dir, best_cfg, bpRNA, model_filter=None, suffix=
 def select_sequences(min_len=50, max_len=100, n=3):
     """Select TS0 sequences with length in range and reasonable base pairs."""
     bpRNA = {}
-    with open(DATA / 'bpRNA.csv') as f:
+    with open(DATA / 'metadata' / 'bpRNA.csv') as f:
         for r in csv.DictReader(f):
             bpRNA[r['id']] = {'seq': r['sequence'], 'pairs': r['base_pairs']}
     splits = {}
-    with open(DATA / 'bpRNA_splits.csv') as f:
+    with open(DATA / 'splits' / 'bpRNA_splits.csv') as f:
         for r in csv.DictReader(f):
             if r.get('partition', '').strip() == 'TS0':
                 splits[r['id']] = True
@@ -288,7 +271,7 @@ def select_sequences(min_len=50, max_len=100, n=3):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--out-dir', default=str(MARCH1 / 'figures' / 'probe_heatmaps'),
+    ap.add_argument('--out-dir', default=str(REPO_ROOT / 'figures' / 'probe_heatmaps'),
                     help='Output directory')
     ap.add_argument('--n-seq', type=int, default=3, help='Number of sequences (2-3)')
     ap.add_argument('--min-len', type=int, default=50)
@@ -309,7 +292,7 @@ def main():
     seq_ids = args.seq_ids or select_sequences(args.min_len, args.max_len, args.n_seq)
 
     bpRNA = {}
-    with open(DATA / 'bpRNA.csv') as f:
+    with open(DATA / 'metadata' / 'bpRNA.csv') as f:
         for r in csv.DictReader(f):
             bpRNA[r['id']] = {'seq': r['sequence'], 'pairs': r['base_pairs']}
 
@@ -317,7 +300,7 @@ def main():
     if args.seq_figure:
         seq_id = args.seq_figure
         folder_name = f'probe_heatmaps_{seq_id.lower().replace("-", "_")}'
-        seq_out_dir = MARCH1 / 'figures' / folder_name
+        seq_out_dir = REPO_ROOT / 'figures' / folder_name
         seq_out_dir.mkdir(parents=True, exist_ok=True)
         model_filter = args.models
         suffix = '_selected' if model_filter else ''
@@ -342,7 +325,7 @@ def main():
 
     for row_idx, seq_id in enumerate(seq_ids):
         if seq_id not in bpRNA:
-            print(f"[WARN] {seq_id} not in bpRNA")
+            print(f"warn: {seq_id} not in bpRNA")
             continue
         seq = bpRNA[seq_id]['seq']
         pairs = ast.literal_eval(bpRNA[seq_id]['pairs'])
@@ -361,10 +344,10 @@ def main():
             emb_path = get_embedding_path(seq_id, model, layer)
             ckpt_path = get_probe_path(model, layer, k)
             if not emb_path.exists():
-                print(f"  [WARN] Missing embedding: {emb_path}")
+                print(f"  warn: Missing embedding: {emb_path}")
                 continue
             if not ckpt_path.exists():
-                print(f"  [WARN] Missing checkpoint: {ckpt_path}")
+                print(f"  warn: Missing checkpoint: {ckpt_path}")
                 continue
 
             emb = np.load(emb_path)
@@ -471,7 +454,7 @@ def main():
     for ext in ['png', 'pdf']:
         out_path = out_dir / f'probe_contact_heatmaps.{ext}'
         fig.savefig(out_path, dpi=300, bbox_inches='tight')
-        print(f"[INFO] Saved {out_path}")
+        print(f"Saved {out_path}")
 
     plt.close()
 
@@ -482,7 +465,7 @@ def main():
         for ext in ['png', 'pdf']:
             out_path = out_dir / f'probe_contact_heatmaps_{model}.{ext}'
             fm.savefig(out_path, dpi=300, bbox_inches='tight')
-            print(f"[INFO] Saved {out_path}")
+            print(f"Saved {out_path}")
         plt.close(fm)
     print(f"\nSequences: {seq_ids}")
     return 0

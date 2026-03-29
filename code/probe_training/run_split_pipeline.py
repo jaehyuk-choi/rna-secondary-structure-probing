@@ -1,13 +1,5 @@
 #!/usr/bin/env python3
-"""Run CPLfold alpha sweep for a partition (TS0, VL0, new).
-
-This is a feb23-local copy of feb8/scripts/run_split_pipeline.py with one critical fix:
-- Robustly parse CPLfold_inter output lines of the form: "<dotbracket> (<energy>)".
-  The previous split("(")[0] logic truncates structures (dot-bracket contains '('),
-  causing almost all rows to be dropped and CSVs to stay empty.
-
-Outputs: detailed_results_{model}.csv in output-dir.
-"""
+"""CPLfold α sweep per partition; parses dot-bracket+energy lines without naive split("(")[0]."""
 
 import argparse
 import ast
@@ -21,7 +13,7 @@ from pathlib import Path
 
 import torch
 
-sys.path.insert(0, '/projects/u6cg/jay/dissertations/jan22')
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from utils.evaluation import compute_pair_metrics, precision_recall_f1
 
 
@@ -130,7 +122,7 @@ def _parse_cplfold_struct_energy(stdout: str):
 
 
 def run_cplfold(seq, bonus_file, alpha, use_contrafold=False, cplfold_path=None, python_exe=None, timeout_s=180):
-    cplfold_path = cplfold_path or '/projects/u6cg/jay/CPLfold_inter/CPLfold_inter.py'
+    cplfold_path = cplfold_path or str(Path(__file__).resolve().parents[2] / 'code' / 'folding_integration' / 'CPLfold_inter.py')
     python_exe = python_exe or _get_python_for_subprocess()
     cmd = [
         python_exe, cplfold_path, seq,
@@ -147,13 +139,13 @@ def run_cplfold(seq, bonus_file, alpha, use_contrafold=False, cplfold_path=None,
             return struct, energy
 
         if out.returncode != 0 and out.stderr:
-            print(f"[WARN] CPLfold failed rc={out.returncode}: {out.stderr[:300]}", file=sys.stderr, flush=True)
+            print(f"warn: CPLfold failed rc={out.returncode}: {out.stderr[:300]}", file=sys.stderr, flush=True)
         return None, None
     except subprocess.TimeoutExpired:
-        print(f"[WARN] CPLfold timeout after {timeout_s}s (len={len(seq)})", file=sys.stderr, flush=True)
+        print(f"warn: CPLfold timeout after {timeout_s}s (len={len(seq)})", file=sys.stderr, flush=True)
         return None, None
     except Exception as e:
-        print(f"[WARN] CPLfold exception: {e}", file=sys.stderr, flush=True)
+        print(f"warn: CPLfold exception: {e}", file=sys.stderr, flush=True)
         return None, None
 
 
@@ -197,9 +189,10 @@ def main():
     ap.add_argument('--partition', required=True, help='VL0, TS0, or new')
     ap.add_argument('--base-pairs-dir', required=True)
     ap.add_argument('--output-dir', required=True)
-    ap.add_argument('--splits-csv', default='/projects/u6cg/jay/dissertations/data/bpRNA_splits.csv')
-    ap.add_argument('--bpRNA-csv', default='/projects/u6cg/jay/dissertations/data/bpRNA.csv')
-    ap.add_argument('--config-csv', default='/projects/u6cg/jay/dissertations/jan22/results_updated/summary/final_selected_config.csv')
+    REPO_ROOT = Path(__file__).resolve().parents[2]
+    ap.add_argument('--splits-csv', default=str(REPO_ROOT / 'data' / 'splits' / 'bpRNA_splits.csv'))
+    ap.add_argument('--bpRNA-csv', default=str(REPO_ROOT / 'data' / 'metadata' / 'bpRNA.csv'))
+    ap.add_argument('--config-csv', default=str(REPO_ROOT / 'configs' / 'final_selected_config_unconstrained.csv'))
     ap.add_argument('--alpha-start', type=float, default=0.0)
     ap.add_argument('--alpha-end', type=float, default=2.0)
     ap.add_argument('--alpha-step', type=float, default=0.02)
@@ -214,17 +207,17 @@ def main():
     out_dir.mkdir(parents=True, exist_ok=True)
 
     seq_ids = load_partition_seqs(args.splits_csv, args.partition)
-    print(f"[INFO] Loading {args.partition} sequences from: {args.splits_csv}")
-    print(f"[INFO] Found {len(seq_ids)} {args.partition} sequences")
+    print(f"Loading {args.partition} sequences from: {args.splits_csv}")
+    print(f"Found {len(seq_ids)} {args.partition} sequences")
 
     bpRNA = load_bpRNA(args.bpRNA_csv)
-    print(f"[INFO] Loaded {len(bpRNA)} sequences from bpRNA.csv")
+    print(f"Loaded {len(bpRNA)} sequences from bpRNA.csv")
 
     config = load_config(args.config_csv, args.models)
-    print(f"[INFO] Loading optimal configurations from: {args.config_csv}")
+    print(f"Loading optimal configurations from: {args.config_csv}")
 
     alphas = _alpha_grid(args.alpha_start, args.alpha_end, args.alpha_step)
-    print(f"[INFO] Alpha values: {len(alphas)} points from {alphas[0]:.2f} to {alphas[-1]:.2f} (step={args.alpha_step})")
+    print(f"Alpha values: {len(alphas)} points from {alphas[0]:.2f} to {alphas[-1]:.2f} (step={args.alpha_step})")
 
     for model in args.models:
         if model not in config:
@@ -244,7 +237,7 @@ def main():
                     except Exception:
                         continue
                     existing.add(key)
-            print(f"[INFO] Found {len(existing)} existing rows in {csv_path.name}")
+            print(f"Found {len(existing)} existing rows in {csv_path.name}")
 
         tasks = []
         for seq_id in seq_ids:
@@ -269,10 +262,10 @@ def main():
                 tasks.append((seq_id, seq, true_pairs, model, alpha, str(bonus_file), args.use_contrafold, thresh, args.timeout_s))
 
         if not tasks:
-            print(f"[INFO] {model}: no new tasks")
+            print(f"{model}: no new tasks")
             continue
 
-        print(f"[INFO] Processing {model}: {len(tasks)} tasks with {args.num_workers} workers")
+        print(f"Processing {model}: {len(tasks)} tasks with {args.num_workers} workers")
         fieldnames = ['seq_id', 'model', 'alpha', 'threshold_used', 'f1', 'precision', 'recall', 'tp', 'fp', 'fn', 'predicted_count', 'energy', 'structure']
         file_has_data = csv_path.exists() and csv_path.stat().st_size > 0
 
@@ -294,11 +287,11 @@ def main():
                         wrote += 1
                     done += 1
                     if done % 500 == 0:
-                        print(f"[INFO] {model}: {done}/{len(tasks)} done (rows_written={wrote})")
+                        print(f"{model}: {done}/{len(tasks)} done (rows_written={wrote})")
 
-        print(f"[INFO] {model}: done. Output: {csv_path}")
+        print(f"{model}: done. Output: {csv_path}")
 
-    print("\nAll done!")
+    print("\ndone")
 
 
 if __name__ == '__main__':

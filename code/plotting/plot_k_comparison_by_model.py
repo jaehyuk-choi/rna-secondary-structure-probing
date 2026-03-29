@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-"""
-k comparison: X-axis = model, color = k (32, 64, 128).
-Output: k_comparison_val_f1_by_model.png
-"""
+"""Val F1 by model colored by k (32/64/128) from k_comparison_val_f1.csv."""
 
 import csv
 from pathlib import Path
@@ -10,9 +7,9 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
-MARCH1 = Path(__file__).resolve().parents[1]
-DATA_PATH = MARCH1 / 'data' / 'k_comparison_val_f1.csv'
-OUT_DIR = MARCH1 / 'figures' / 'layer_k_comparison'
+REPO_ROOT = Path(__file__).resolve().parents[2]
+DATA_PATH = REPO_ROOT / 'results' / 'sweeps' / 'k_comparison_val_f1.csv'
+OUT_DIR = REPO_ROOT / 'figures' / 'main' / 'layer_k_comparison'
 OUT_PATH = OUT_DIR / 'k_comparison_val_f1_by_model.png'
 
 # NeurIPS-style muted palette (k=32, 64, 128)
@@ -35,7 +32,7 @@ def load_data():
 def main():
     rows = load_data()
     if not rows:
-        print(f"[ERROR] No data in {DATA_PATH}")
+        print(f"error: No data in {DATA_PATH}")
         return 1
 
     models = [r['model'] for r in rows]
@@ -63,7 +60,7 @@ def main():
     plt.tight_layout()
     plt.savefig(OUT_PATH, dpi=150, bbox_inches='tight')
     plt.close()
-    print(f"[INFO] Saved {OUT_PATH}")
+    print(f"Saved {OUT_PATH}")
     return 0
 
 

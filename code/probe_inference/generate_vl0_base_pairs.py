@@ -1,12 +1,5 @@
 #!/usr/bin/env python3
-"""Generate base_pair.txt files for VL0 (validation) sequences.
-
-Same logic as feb8/validation_based_optimal/generate_vl0_base_pairs.py, but:
-- Writes under feb23
-- Includes rnabert -> RNABERT embedding dir mapping
-- Applies decoding_mode (canonical_constrained, canonical_wobble, unconstrained) so
-  bonus pairs match probe-only evaluation (only canonical pairs when configured).
-"""
+"""VL0 base_pair.txt generation; respects decoding_mode for probe-only parity."""
 
 import argparse
 import csv
@@ -14,9 +7,8 @@ import sys
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 
-# Add jan22 for generate_base_pairs and evaluation utils
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'jan22'))
-from scripts.generation.generate_base_pairs import load_probe_matrix
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from probe_inference.generate_base_pairs import load_probe_matrix
 from utils.evaluation import create_canonical_mask
 
 
@@ -84,13 +76,14 @@ def _process_one_seq(args):
 
 
 def main():
+    REPO_ROOT = Path(__file__).resolve().parents[2]
     ap = argparse.ArgumentParser()
-    ap.add_argument('--splits-csv', default='/projects/u6cg/jay/dissertations/data/bpRNA_splits.csv')
-    ap.add_argument('--bpRNA-csv', default='/projects/u6cg/jay/dissertations/data/bpRNA.csv')
-    ap.add_argument('--config-csv', default='/projects/u6cg/jay/dissertations/jan22/results_updated/summary/final_selected_config.csv')
-    ap.add_argument('--embeddings-base', default='/projects/u6cg/jay/dissertations/data/embeddings')
-    ap.add_argument('--checkpoint-base', default='/projects/u6cg/jay/dissertations/jan22/results_updated/outputs')
-    ap.add_argument('--output-dir', default='/projects/u6cg/jay/dissertations/feb23/vl0_base_pairs')
+    ap.add_argument('--splits-csv', default=str(REPO_ROOT / 'data' / 'splits' / 'bpRNA_splits.csv'))
+    ap.add_argument('--bpRNA-csv', default=str(REPO_ROOT / 'data' / 'metadata' / 'bpRNA.csv'))
+    ap.add_argument('--config-csv', default=str(REPO_ROOT / 'configs' / 'final_selected_config_unconstrained.csv'))
+    ap.add_argument('--embeddings-base', default=str(REPO_ROOT / 'data' / 'embeddings'))
+    ap.add_argument('--checkpoint-base', default=str(REPO_ROOT / 'results' / 'outputs'))
+    ap.add_argument('--output-dir', default=str(REPO_ROOT / 'results' / 'folding' / 'vl0_base_pairs'))
     ap.add_argument('--models', nargs='+', default=['ernie', 'roberta', 'rnafm', 'rinalmo', 'onehot', 'rnabert'])
     ap.add_argument('--limit', type=int, default=None)
     ap.add_argument('--num-workers', type=int, default=20)
@@ -105,7 +98,7 @@ def main():
         for row in csv.DictReader(f):
             if row.get('partition', '').strip().upper() == 'VL0':
                 vl0_ids.append(row['id'])
-    print(f"[INFO] Found {len(vl0_ids)} VL0 sequences")
+    print(f"Found {len(vl0_ids)} VL0 sequences")
 
     config = {}
     with open(args.config_csv) as f:
@@ -132,7 +125,7 @@ def main():
         (out_dir / model).mkdir(exist_ok=True)
         cfg = config.get(model)
         if not cfg:
-            print(f"[WARN] No config for model={model}")
+            print(f"warn: No config for model={model}")
             continue
 
         ckpt = (
@@ -144,7 +137,7 @@ def main():
             / 'best.pt'
         )
         if not ckpt.exists():
-            print(f"[WARNING] Checkpoint not found: {ckpt}")
+            print(f"warn: Checkpoint not found: {ckpt}")
             continue
 
         B, k, d = load_probe_matrix(str(ckpt))
@@ -162,19 +155,19 @@ def main():
             tasks.append((seq_id, str(emb_path), str(out_path), B_npy, thresh, sequence, allow_gu, args.force, use_threshold, model))
 
         n_workers = min(args.num_workers, len(tasks))
-        print(f"[INFO] {model}: {len(tasks)} sequences, {n_workers} workers, decoding_mode={decoding_mode}")
+        print(f"{model}: {len(tasks)} sequences, {n_workers} workers, decoding_mode={decoding_mode}")
 
         done = 0
         with ProcessPoolExecutor(max_workers=n_workers) as ex:
             for fut in as_completed(ex.submit(_process_one_seq, t) for t in tasks):
                 sid, ok, msg = fut.result()
                 if not ok and msg != 'exists':
-                    print(f"[WARN] {model} {sid}: {msg}")
+                    print(f"warn: {model} {sid}: {msg}")
                 done += 1
                 if done % 200 == 0:
-                    print(f"[INFO] {model}: {done}/{len(tasks)}")
+                    print(f"{model}: {done}/{len(tasks)}")
 
-    print(f"[INFO] Done. Output: {out_dir}")
+    print(f"Done. Output: {out_dir}")
 
 
 if __name__ == '__main__':

@@ -1,10 +1,4 @@
-"""
- *energy_parameter.h*
- feature values from ViennaRNA.
-
- author: Dezhong Deng, He Zhang
- edited by: 02/2018
-"""
+"""ViennaRNA energy tables (from energy_parameter.h)."""
 
 VIE_INF = 999999999
 NBPAIRS = 7

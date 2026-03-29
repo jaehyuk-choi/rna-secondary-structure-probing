@@ -1,17 +1,15 @@
 #!/usr/bin/env python3
-"""
-Analyze CPLfold results by sequence length bins.
-Usage: python3 analyze_by_length.py --results-dir ... --output ...
-"""
+"""Bin CPLfold per-seq F1 by sequence length (default or custom bins)."""
 
 import argparse
 import csv
 from collections import defaultdict
 from pathlib import Path
 
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
 
 def load_seq_lengths(bpRNA_csv):
-    """seq_id -> length"""
     out = {}
     with open(bpRNA_csv) as f:
         for r in csv.DictReader(f):
@@ -21,14 +19,12 @@ def load_seq_lengths(bpRNA_csv):
 
 
 def get_bin(length, bins=None):
-    """Default bins: <100, 100-199, 200-399, 400-599, 600+"""
     if bins is None:
         if length < 100: return '<100'
         if length < 200: return '100-199'
         if length < 400: return '200-399'
         if length < 600: return '400-599'
         return '600+'
-    # Custom bins: e.g. [("<100", 0, 100), ("200-400", 200, 400), ("400+", 400, 99999)]
     for label, lo, hi in bins:
         if lo <= length < hi:
             return label
@@ -37,8 +33,8 @@ def get_bin(length, bins=None):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--results-dir', default='/projects/u6cg/jay/dissertations/feb25/results_thresholded_ts0_new')
-    ap.add_argument('--bpRNA-csv', default='/projects/u6cg/jay/dissertations/data/bpRNA.csv')
+    ap.add_argument('--results-dir', default=str(REPO_ROOT / 'results' / 'folding'))
+    ap.add_argument('--bpRNA-csv', default=str(REPO_ROOT / 'data' / 'metadata' / 'bpRNA.csv'))
     ap.add_argument('--output', default=None, help='Output CSV path')
     ap.add_argument('--bins', default='default',
                     help='default or custom: <100,200-400,400+ (format: label:lo:hi,label:lo:hi)')
@@ -46,12 +42,10 @@ def main():
 
     lengths = load_seq_lengths(args.bpRNA_csv)
 
-    # Parse bins: <100 -> (0,100), 200-400 -> (200,400), 400+ -> (400,99999)
     if args.bins == 'default':
         bin_specs = [('<100', 0, 100), ('100-199', 100, 200), ('200-399', 200, 400),
                      ('400-599', 400, 600), ('600+', 600, 99999)]
     elif args.bins == 'simple':
-        # <100, 200-400, 400+ (100-199 included to avoid gap)
         bin_specs = [('<100', 0, 100), ('100-199', 100, 200), ('200-400', 200, 401), ('400+', 401, 99999)]
     else:
         bin_specs = []
@@ -64,7 +58,6 @@ def main():
             elif p == '400+':
                 bin_specs.append(('400+', 400, 99999))
             else:
-                # Try label:lo:hi
                 toks = p.split(':')
                 if len(toks) == 3:
                     bin_specs.append((toks[0], int(toks[1]), int(toks[2])))
@@ -113,7 +106,7 @@ def main():
         w = csv.DictWriter(f, fieldnames=['partition_backend', 'model', 'length_bin', 'n', 'mean_f1'])
         w.writeheader()
         w.writerows(out_rows)
-    print(f"[INFO] Wrote {out_path}")
+    print(f"Wrote {out_path}")
     return 0
 
 

@@ -1,15 +1,5 @@
 #!/usr/bin/env python3
-"""
-Probe-only metrics with `canonical_rate_wobble`, which includes GU and UG pairs.
-
-This script follows the same evaluation logic as `compute_feb8_probe_only_metrics.py`
-but adds `canonical_rate_wobble`.
-Outputs:
-- `final_test_metrics_wobble.csv`
-- `final_new_metrics_wobble.csv`
-
-The standard output files are left unchanged.
-"""
+"""Like compute_feb8_probe_only_metrics but adds canonical_rate_wobble → *_wobble.csv side files."""
 
 import argparse
 import ast
@@ -21,7 +11,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
-sys.path.insert(0, '/projects/u6cg/jay/dissertations/jan22')
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from utils.evaluation import (
     compute_canonical_rate,
     compute_pair_metrics,
@@ -29,9 +19,7 @@ from utils.evaluation import (
     precision_recall_f1,
     prob_to_pairs,
 )
-
-sys.path.insert(0, '/projects/u6cg/jay/dissertations/jan22')
-from scripts.generation.generate_base_pairs import load_probe_matrix
+from probe_inference.generate_base_pairs import load_probe_matrix
 
 
 def get_embedding_path(seq_id, model, layer, embeddings_base):
@@ -99,13 +87,14 @@ def eval_one_seq(seq_id, sequence, true_pairs, emb_path, B, thresh, decoding_mod
 
 
 def main():
+    REPO_ROOT = Path(__file__).resolve().parents[2]
     ap = argparse.ArgumentParser()
-    ap.add_argument('--config-csv', default='/projects/u6cg/jay/dissertations/march1/final_selected_config_unconstrained.csv')
-    ap.add_argument('--splits-csv', default='/projects/u6cg/jay/dissertations/data/bpRNA_splits.csv')
-    ap.add_argument('--bpRNA-csv', default='/projects/u6cg/jay/dissertations/data/bpRNA.csv')
-    ap.add_argument('--embeddings-base', default='/projects/u6cg/jay/dissertations/data/embeddings')
-    ap.add_argument('--checkpoint-base', default='/projects/u6cg/jay/dissertations/feb8/results_updated/outputs')
-    ap.add_argument('--output-dir', default='/projects/u6cg/jay/dissertations/march1')
+    ap.add_argument('--config-csv', default=str(REPO_ROOT / 'configs' / 'final_selected_config_unconstrained.csv'))
+    ap.add_argument('--splits-csv', default=str(REPO_ROOT / 'data' / 'splits' / 'bpRNA_splits.csv'))
+    ap.add_argument('--bpRNA-csv', default=str(REPO_ROOT / 'data' / 'metadata' / 'bpRNA.csv'))
+    ap.add_argument('--embeddings-base', default=str(REPO_ROOT / 'data' / 'embeddings'))
+    ap.add_argument('--checkpoint-base', default=str(REPO_ROOT / 'results' / 'outputs'))
+    ap.add_argument('--output-dir', default=str(REPO_ROOT / 'results' / 'metrics'))
     ap.add_argument('--progress-log', default='', help='Path to progress log')
     ap.add_argument('--models', nargs='+', default=['ernie', 'roberta', 'rnafm', 'rinalmo', 'onehot', 'rnabert'])
     args = ap.parse_args()
@@ -166,7 +155,7 @@ def main():
             continue
         ckpt = Path(args.checkpoint_base) / model / f"layer_{cfg['layer']}" / f"k_{cfg['k']}" / "seed_42" / "best.pt"
         if not ckpt.exists():
-            log(f"[WARN] Checkpoint not found: {ckpt}")
+            log(f"warn: Checkpoint not found: {ckpt}")
             continue
         B, k, d = load_probe_matrix(str(ckpt))
         B = B.cpu()

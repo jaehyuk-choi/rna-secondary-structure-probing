@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
 """Box plot of bpRNA sequence lengths by partition (TR0, VL0, TS0, NEW)."""
 import csv
+from pathlib import Path
+
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
 splits = {}
-with open('bpRNA_splits.csv') as f:
+with open(REPO_ROOT / 'data' / 'splits' / 'bpRNA_splits.csv') as f:
     r = csv.DictReader(f)
     for row in r:
         p = row.get('partition', '').strip().upper()
@@ -14,7 +18,7 @@ with open('bpRNA_splits.csv') as f:
             splits[row['id']] = p
 
 bpRNA = {}
-with open('bpRNA.csv') as f:
+with open(REPO_ROOT / 'data' / 'metadata' / 'bpRNA.csv') as f:
     r = csv.DictReader(f)
     for row in r:
         seq = row.get('sequence', row.get('seq', ''))
@@ -40,5 +44,9 @@ ax.set_xlabel('Partition', fontsize=12)
 ax.set_title('bpRNA Sequence Length by Partition', fontsize=14)
 ax.grid(axis='y', alpha=0.3)
 plt.tight_layout()
-plt.savefig('bpRNA_length_boxplot.png', dpi=150, bbox_inches='tight')
-print("Saved: bpRNA_length_boxplot.png")
+
+out_dir = REPO_ROOT / 'figures' / 'main'
+out_dir.mkdir(parents=True, exist_ok=True)
+out_path = out_dir / 'bpRNA_length_boxplot.png'
+plt.savefig(out_path, dpi=150, bbox_inches='tight')
+print(f"Saved: {out_path}")

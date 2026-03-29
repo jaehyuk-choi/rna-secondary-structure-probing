@@ -1,11 +1,5 @@
 #!/usr/bin/env python3
-"""
-Aggregate CPLfold results into summary CSVs.
-
-For each model × (Vienna/Contrafold) × (TS0/NEW):
-- F1 at optimal alpha (from Val if --val-results-dir provided, else from alpha sweep)
-- Writes: feb25/results_thresholded_ts0_new/summary.csv and detailed CSVs
-"""
+"""Roll up CPLfold per-seq CSVs: pick alpha (Val dir if given, else sweep max), write summary + per-alpha tables."""
 
 import argparse
 import csv
@@ -14,9 +8,10 @@ from pathlib import Path
 
 import numpy as np
 
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
 
 def load_detailed(base_dir, model):
-    """Load detailed_results_{model}.csv, return list of dicts."""
     p = Path(base_dir) / f'detailed_results_{model}.csv'
     if not p.exists():
         return None
@@ -31,7 +26,6 @@ def load_detailed(base_dir, model):
 
 
 def find_optimal_alpha(data):
-    """Global optimal: alpha that maximizes mean F1."""
     if not data:
         return None, None
     by_alpha = defaultdict(list)
@@ -44,7 +38,6 @@ def find_optimal_alpha(data):
 
 
 def get_f1_at_alpha(data, alpha, tol=0.01):
-    """Get mean F1 at given alpha (or closest available)."""
     if not data:
         return np.nan
     alphas = sorted(set(r['alpha'] for r in data))
@@ -54,7 +47,6 @@ def get_f1_at_alpha(data, alpha, tol=0.01):
 
 
 def aggregate_alpha_sweep(data):
-    """Return dict: alpha -> mean_f1."""
     if not data:
         return {}
     by_alpha = defaultdict(list)
@@ -65,7 +57,7 @@ def aggregate_alpha_sweep(data):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--results-dir', default='/projects/u6cg/jay/dissertations/feb25/results_thresholded_ts0_new')
+    ap.add_argument('--results-dir', default=str(REPO_ROOT / 'results' / 'folding'))
     ap.add_argument('--val-results-dir', default=None,
                     help='VL0 Vienna results dir for optimal alpha. If None, use best from sweep.')
     ap.add_argument('--val-contrafold-dir', default=None,
@@ -86,7 +78,6 @@ def main():
         'new_contrafold': ('NEW', 'Contrafold'),
     }
 
-    # Optional: load Val optimal alphas
     val_opt_alpha = {}  # (model, backend) -> alpha
     if args.val_results_dir:
         val_vienna = Path(args.val_results_dir)
@@ -111,7 +102,6 @@ def main():
             data = load_detailed(base, model)
             if not data:
                 continue
-            # Optimal alpha: from Val if available, else from sweep
             opt_alpha = val_opt_alpha.get((model, backend))
             if opt_alpha is None:
                 opt_alpha, _ = find_optimal_alpha(data)
@@ -126,15 +116,13 @@ def main():
                 'mean_f1': f1_at_opt,
             })
 
-    # Write summary.csv
     summary_path = out_dir / 'summary.csv'
     with open(summary_path, 'w', newline='') as f:
         w = csv.DictWriter(f, fieldnames=['model', 'partition', 'backend', 'optimal_alpha', 'alpha_source', 'mean_f1'])
         w.writeheader()
         w.writerows(summary_rows)
-    print(f"[INFO] Wrote {summary_path}")
+    print(f"Wrote {summary_path}")
 
-    # Write detailed alpha sweep per (partition, backend)
     for subdir, (partition, backend) in subdirs.items():
         base = results_dir / subdir
         if not base.exists():
@@ -153,9 +141,9 @@ def main():
                 w = csv.DictWriter(f, fieldnames=['model', 'alpha', 'mean_f1'])
                 w.writeheader()
                 w.writerows(rows)
-            print(f"[INFO] Wrote {detail_path}")
+            print(f"Wrote {detail_path}")
 
-    print(f"[INFO] Done. Summary: {summary_path}")
+    print(f"summary: {summary_path}")
     return 0
 
 

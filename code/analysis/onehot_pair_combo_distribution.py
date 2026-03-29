@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
-"""
-Under unconstrained decoding, report prediction counts and rates for all 16 nucleotide-pair combinations.
-Supported models: `onehot`, `rinalmo` via `--model`.
-Output: `{model}_pair_combo_distribution.csv`
-"""
+"""16-way nucleotide-pair histogram for onehot / rinalmo (unconstrained decode)."""
 
 import argparse
 import csv
@@ -13,9 +9,10 @@ from pathlib import Path
 import numpy as np
 import torch
 
-sys.path.insert(0, '/projects/u6cg/jay/dissertations/jan22')
+REPO_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from utils.evaluation import prob_to_pairs
-from scripts.generation.generate_base_pairs import load_probe_matrix
+from probe_inference.generate_base_pairs import load_probe_matrix
 
 BASES = ['A', 'U', 'G', 'C']
 MODEL_CONFIG = {
@@ -25,9 +22,8 @@ MODEL_CONFIG = {
 
 
 def get_embedding_path(seq_id, model, layer):
-    base = Path('/projects/u6cg/jay/dissertations/data/embeddings')
     model_dir = MODEL_CONFIG.get(model, {}).get('dir', model)
-    return base / model_dir / 'bpRNA' / 'by_layer' / f'layer_{layer}' / f'{seq_id}.npy'
+    return REPO_ROOT / 'data' / 'embeddings' / model_dir / 'bpRNA' / 'by_layer' / f'layer_{layer}' / f'{seq_id}.npy'
 
 
 def run_model(model_name, seq_ids, bpRNA, limit=None):
@@ -35,7 +31,7 @@ def run_model(model_name, seq_ids, bpRNA, limit=None):
     if not cfg:
         raise ValueError(f"Unknown model: {model_name}. Choose from {list(MODEL_CONFIG)}")
     layer, k, thresh = cfg['layer'], cfg['k'], cfg['thresh']
-    ckpt = Path(f'/projects/u6cg/jay/dissertations/feb8/results_updated/outputs/{model_name}/layer_{layer}/k_{k}/seed_42/best.pt')
+    ckpt = REPO_ROOT / 'results' / 'outputs' / model_name / f'layer_{layer}' / f'k_{k}' / 'seed_42' / 'best.pt'
     if not ckpt.exists():
         raise FileNotFoundError(f"Checkpoint not found: {ckpt}")
     B, _, _ = load_probe_matrix(str(ckpt))
@@ -74,12 +70,12 @@ def main():
     args = ap.parse_args()
 
     bpRNA = {}
-    with open('/projects/u6cg/jay/dissertations/data/bpRNA.csv') as f:
+    with open(REPO_ROOT / 'data' / 'metadata' / 'bpRNA.csv') as f:
         for row in csv.DictReader(f):
             bpRNA[row['id']] = row['sequence']
 
     seq_ids = []
-    with open('/projects/u6cg/jay/dissertations/data/bpRNA_splits.csv') as f:
+    with open(REPO_ROOT / 'data' / 'splits' / 'bpRNA_splits.csv') as f:
         for row in csv.DictReader(f):
             p = row.get('partition', '').strip().upper()
             if p in ('TS0', 'NEW'):
@@ -87,7 +83,7 @@ def main():
 
     combo_counts, total_pred = run_model(args.model, seq_ids, bpRNA, args.limit)
 
-    out_path = Path(f'/projects/u6cg/jay/dissertations/march1/data/{args.model}_pair_combo_distribution.csv')
+    out_path = REPO_ROOT / 'results' / 'statistics' / f'{args.model}_pair_combo_distribution.csv'
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
     rows = []
