@@ -15,6 +15,7 @@ This repository investigates whether pretrained RNA foundation models encode bas
 ```
 ├── code/
 │   ├── models/              Bilinear probe definition (StructuralContactProbe)
+│   ├── embeddings/          Embedding extraction backends (6 models)
 │   ├── probe_training/      Training pipeline + Slurm scripts
 │   ├── probe_inference/     Generate base-pair scores from trained probes
 │   ├── evaluation/          Metric computation, config selection, summary tables
@@ -23,12 +24,23 @@ This repository investigates whether pretrained RNA foundation models encode bas
 │   ├── plotting/            All dissertation figure scripts
 │   ├── preprocessing/       Contact map generation, dataset statistics
 │   ├── utils/               Shared evaluation helpers
-│   └── run_sh/              Shell launchers
+│   └── run_sh/              Shell launchers and Slurm job scripts
 ├── configs/                 Validation-selected hyperparameter configs
-├── data/                    bpRNA metadata and split assignments
-├── results/                 All computed metrics, sweeps, tables, statistics
+├── data/
+│   ├── metadata/            bpRNA and ArchiveII sequence metadata
+│   └── splits/              TR0/VL0/TS0/NEW partition assignments
+├── results/
+│   ├── metrics/             Probe-only F1, precision, recall (TS0/NEW)
+│   ├── folding/             CPLfold alpha-sweep results
+│   ├── sweeps/              Layer-wise and k-comparison validation sweeps
+│   ├── per_sequence/        Per-sequence metrics for statistical tests
+│   ├── tables/              Derived tables (canonical rates, pair distributions)
+│   └── statistics/          Significance test outputs
 ├── figures/                 Generated dissertation figures (main + appendix)
+├── external/                Upstream model repos and checkpoints (not committed)
+├── docs/                    Detailed embedding pipeline documentation
 ├── dissertation/            LaTeX source (skeleton.tex)
+├── scripts/                 External repo setup and validation helpers
 └── requirements.txt         Python dependencies
 ```
 
@@ -43,7 +55,7 @@ graph TD
     C --> D[Trained checkpoints<br/>results/outputs/]
 
     D --> F[Probe inference<br/>generate_base_pairs.py]
-    F --> G[Probe-only evaluation<br/>compute_feb8_probe_only_metrics.py]
+    F --> G[Probe-only evaluation<br/>compute_probe_only_metrics.py]
     G --> H[results/metrics/]
 
     D --> I[VL0 config selection<br/>select_unconstrained_best_config.py]
@@ -58,17 +70,31 @@ graph TD
     N --> O[figures/ + results/tables/]
 ```
 
+## Probe Architecture
+
+The structural probe applies a low-rank bilinear projection to frozen per-residue embeddings:
+
+```
+z_i = B^T h_i  ∈ R^k
+s_ij = z_i^T z_j
+p_ij = σ(s_ij)
+```
+
+where `h_i ∈ R^D` is the embedding at position `i`, `B ∈ R^{D×k}` is the learned projection matrix, and `p_ij` is the predicted base-pair probability for positions `(i, j)`. Training uses binary cross-entropy against ground-truth contact maps. Decoding uses greedy max-one matching: pairs are selected in descending probability order, each position pairs at most once, and a threshold `τ` is applied. This does not enforce pseudoknot-freeness.
+
+Implementation: `code/models/bilinear_probe_model.py`
+
 ## Task-to-Code Mapping
 
 | Task | Code | Key inputs | Key outputs |
 |------|------|-----------|-------------|
-| **Probe model** | `code/models/bilinear_probe_model.py` | — | `BilinearContactProbe` class |
+| **Probe model** | `code/models/bilinear_probe_model.py` | — | `StructuralContactProbe` class |
 | **Embedding extraction** | `code/embeddings/generate_embeddings.py` | `data/metadata/*.csv`, external model repos | `data/embeddings/{MODEL}/{DATASET}/by_layer/layer_*/` |
 | **Training** | `code/probe_training/train_probe_automated.py` | Embeddings, contact maps | `results/outputs/{model}/layer_*/k_*/seed_*/best.pt` |
 | **Slurm training** | `code/probe_training/sbatch_train_model.sh` | Model name | All (layer, k) checkpoints for one model |
 | **Full pipeline** | `code/probe_training/run_all_experiments.sh` | — | All training + downstream jobs |
 | **Config selection** | `code/evaluation/select_unconstrained_best_config.py` | `results/outputs/` | `configs/final_selected_config_unconstrained.csv` |
-| **TS0/NEW metrics** | `code/evaluation/compute_feb8_probe_only_metrics.py` | Configs, checkpoints | `results/metrics/final_{test,new}_metrics.csv` |
+| **TS0/NEW metrics** | `code/evaluation/compute_probe_only_metrics.py` | Configs, checkpoints | `results/metrics/final_{test,new}_metrics.csv` |
 | **Wobble metrics** | `code/evaluation/compute_probe_only_with_wobble.py` | Configs, checkpoints | `results/metrics/*_wobble.csv` |
 | **Summary table** | `code/evaluation/build_summary_table.py` | Final metrics | `results/metrics/unconstrained_results_summary.csv` |
 | **CPLfold engine** | `code/folding_integration/CPLfold_inter.py` | Sequence, energy params, bonus matrix | Dot-bracket structure |
@@ -105,29 +131,48 @@ graph TD
 - `pip install -r requirements.txt`
 - Optional: ViennaRNA Python bindings (`conda install -c bioconda viennarna`)
 
-### External data (not included — too large)
+### What is included vs excluded
 
-| Artefact | Expected location |
-|----------|------------------|
-| Per-layer embeddings | `data/embeddings/{MODEL}/bpRNA/by_layer/layer_{N}/{id}.npy` |
-| Contact maps | `data/contact_maps/bpRNA/{id}_contact.npy` |
-| Trained checkpoints | `results/outputs/{model}/layer_*/k_*/seed_*/best.pt` |
+This repository contains all source code, configuration files, pre-computed result CSVs, and generated figures needed to understand and verify the dissertation results. The following large artifacts are **not included** due to size:
 
-Contact maps can be regenerated: `python code/preprocessing/compute_structure_features.py`
+| Artefact | Expected location | How to regenerate |
+|----------|------------------|-------------------|
+| Per-layer embeddings | `data/embeddings/{MODEL}/bpRNA/by_layer/layer_{N}/{id}.npy` | See [docs/EMBEDDINGS.md](docs/EMBEDDINGS.md) |
+| Contact maps | `data/contact_maps/bpRNA/{id}_contact.npy` | `python code/preprocessing/compute_structure_features.py` |
+| Trained checkpoints | `results/outputs/{model}/layer_*/k_*/seed_*/best.pt` | `bash code/probe_training/run_all_experiments.sh` |
+| Per-model CPLfold detailed results | `results/folding/{subdir}/detailed_results_{model}.csv` | `python code/folding_integration/run_cplfold_exp.py` |
 
-Embeddings can be regenerated from the metadata tables in this repository. See [docs/EMBEDDINGS.md](/lus/lfs1aip2/projects/u6cg/jay/dissertation_submission_claude/docs/EMBEDDINGS.md) for model-specific commands and external dependencies.
+The pre-computed result CSVs in `results/` are sufficient to verify all dissertation tables and regenerate all figures without rerunning experiments.
 
-To prepare the upstream model repositories under `external/`:
+### External model dependencies
+
+Embedding generation requires upstream model repositories and pretrained checkpoints. These are cloned under `external/` and pinned to specific commits via `external/model_sources.lock.json`.
 
 ```bash
 bash scripts/setup_external_repos.sh
 bash scripts/check_external_assets.sh
 ```
 
-Minimal example:
+| Model | Upstream repository | Checkpoint |
+|-------|-------------------|------------|
+| RNA-FM | [ml4bio/RNA-FM](https://github.com/ml4bio/RNA-FM) | `RNA-FM_pretrained.pth` |
+| ERNIE-RNA | [Bruce-ywj/ERNIE-RNA](https://github.com/Bruce-ywj/ERNIE-RNA) | `ERNIE-RNA_pretrain.pt` |
+| RNABERT | [mana438/RNABERT](https://github.com/mana438/RNABERT) | `bert_mul_2.pth` |
+| RiNALMo | [lbcb-sci/RiNALMo](https://github.com/lbcb-sci/RiNALMo) | `rinalmo_giga_pretrained.pt` |
+| RoBERTa | Hugging Face (`roberta-base`) | Downloaded automatically |
+| One-hot | — | — |
+
+See [docs/EMBEDDINGS.md](docs/EMBEDDINGS.md) for detailed model-by-model extraction instructions.
+
+### Generate embeddings
 
 ```bash
 python code/embeddings/generate_embeddings.py onehot --dataset bpRNA
+python code/embeddings/generate_embeddings.py roberta --dataset bpRNA --device cpu
+python code/embeddings/generate_embeddings.py rnafm --dataset bpRNA --device cpu
+python code/embeddings/generate_embeddings.py ernie --dataset bpRNA --device cpu
+python code/embeddings/generate_embeddings.py rnabert --dataset bpRNA --temp-dir /tmp/rnabert_embeddings
+python code/embeddings/generate_embeddings.py rinalmo --dataset bpRNA --device cuda
 ```
 
 ### Train a single probe
@@ -166,6 +211,16 @@ bash code/run_sh/run_all_plots.sh
 | CPLfold α | Swept 0.0–2.0 (step 0.02) on VL0 |
 | Folding backends | ViennaRNA, CONTRAfold |
 | Splits | TR0 (train), VL0 (val), TS0 (in-distribution test), NEW (OOD test) |
+
+## Reproducibility Notes
+
+**Fully reproducible from this repository alone:** All dissertation tables and figures can be verified from the pre-computed CSVs in `results/`. Most plotting scripts read directly from these CSVs and can regenerate figures without any external data.
+
+**Reproducible with external data:** The probe training and evaluation pipeline is fully wired from dataset metadata through embedding generation, probe training, and probe-only evaluation. Given the external model checkpoints and sufficient compute, the full training pipeline can be rerun.
+
+**CPLfold integration:** The CPLfold folding engine (`code/folding_integration/CPLfold_inter.py`) and the experiment orchestration scripts are included and logically complete. However, the CPLfold downstream analysis scripts (`compare_alpha0_vs_best.py`, `alpha0_vs_best_stats.py`, `aggregate_cplfold_val_ts0_new.py`) expect per-model detailed result directories that are not bundled due to size. The aggregated results in `results/folding/` and `results/sweeps/` are included and support all dissertation claims.
+
+**LaTeX compilation:** The dissertation source (`dissertation/skeleton.tex`) references figures via `img/` relative paths and requires `infthesis.cls`, `ugcheck.sty`, and `mybibfile.bib`, which are standard University of Edinburgh thesis infrastructure files not included in this repository.
 
 ## License
 

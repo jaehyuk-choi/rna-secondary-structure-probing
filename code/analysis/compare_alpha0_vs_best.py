@@ -29,8 +29,8 @@ VAL_OPT = {
     ('rnabert','Vienna'):0.14, ('rnabert','Contrafold'):0.56,
 }
 
-FEB25 = REPO_ROOT / 'results' / 'folding'
-FEB8 = {
+FOLDING_RESULTS = REPO_ROOT / 'results' / 'folding'
+BASELINE_DIRS = {
     'ts0_vienna': REPO_ROOT / 'results' / 'sweeps' / 'results_ts0',
     'ts0_contrafold': REPO_ROOT / 'results' / 'sweeps' / 'results_ts0_contrafold',
     'new_vienna': REPO_ROOT / 'results' / 'sweeps' / 'results_new',
@@ -51,10 +51,10 @@ for pkey, pname in partitions:
     print(f"{'model':<10} {'mean F1 (α=0)':<16} {'mean F1 (best α)':<18} {'best α'}")
     print('-'*65)
     backend = 'Vienna' if 'vienna' in pkey else 'Contrafold'
-    feb8_dir = FEB8.get(pkey)
+    baseline_dir = BASELINE_DIRS.get(pkey)
     for m in models:
-        d25 = load_detailed(FEB25 / pkey / f'detailed_results_{m}.csv')
-        d8 = load_detailed(feb8_dir / f'detailed_results_{m}.csv') if feb8_dir else []
+        d25 = load_detailed(FOLDING_RESULTS / pkey / f'detailed_results_{m}.csv')
+        d8 = load_detailed(baseline_dir / f'detailed_results_{m}.csv') if baseline_dir else []
         opt_alpha = VAL_OPT.get((m, backend))
         f1_opt = mean_f1_at_alpha(d25, opt_alpha) if d25 and opt_alpha is not None else float('nan')
         f1_0 = mean_f1_at_alpha(d8, 0.0) if d8 else float('nan')

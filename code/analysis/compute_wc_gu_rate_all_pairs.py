@@ -61,7 +61,7 @@ def main():
             p, wc, wcg = by_partition[part]
             by_partition[part] = (p + n_pairs, wc + wc_count, wcg + wc_gu_count)
 
-    out_dir = REPO_ROOT / 'results' / 'statistics'
+    out_dir = REPO_ROOT / 'results' / 'tables'
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # Table format: Model, TS0_WC, TS0_WC+GU, NEW_WC, NEW_WC+GU (percent)

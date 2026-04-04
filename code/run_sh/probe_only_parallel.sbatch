@@ -39,7 +39,7 @@ mkdir -p "$out" "$ps"
 
 echo "Task $i: model=$model dataset=$part -> $out"
 
-conda run -n "$CONDA_ENV" python "$REPO_ROOT/code/evaluation/compute_feb8_probe_only_metrics.py" \
+conda run -n "$CONDA_ENV" python "$REPO_ROOT/code/evaluation/compute_probe_only_metrics.py" \
   --config-csv "$REPO_ROOT/configs/final_selected_config_unconstrained.csv" \
   --embeddings-base "$EMB" \
   --checkpoint-base "$CKPT" \

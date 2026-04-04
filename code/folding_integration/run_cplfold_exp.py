@@ -18,9 +18,9 @@ def main():
     ap.add_argument('--alpha-start', type=float, default=0.0)
     ap.add_argument('--alpha-end', type=float, default=2.0)
     ap.add_argument('--alpha-step', type=float, default=0.02)
-    ap.add_argument('--val-results-dir', default=str(REPO_ROOT / 'results' / 'folding' / 'results_vl0_feb8'),
+    ap.add_argument('--val-results-dir', default=str(REPO_ROOT / 'results' / 'folding' / 'results_vl0'),
                     help='VL0 Vienna dir for optimal alpha. If set, run only at optimal alpha (no sweep).')
-    ap.add_argument('--val-contrafold-dir', default=str(REPO_ROOT / 'results' / 'folding' / 'results_vl0_contrafold_feb8'),
+    ap.add_argument('--val-contrafold-dir', default=str(REPO_ROOT / 'results' / 'folding' / 'results_vl0_contrafold'),
                     help='VL0 Contrafold dir for optimal alpha.')
     ap.add_argument('--num-workers', type=int, default=20)
     ap.add_argument('--models', nargs='+', default=['ernie', 'roberta', 'rnafm', 'rinalmo', 'onehot'])

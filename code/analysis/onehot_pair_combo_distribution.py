@@ -83,7 +83,7 @@ def main():
 
     combo_counts, total_pred = run_model(args.model, seq_ids, bpRNA, args.limit)
 
-    out_path = REPO_ROOT / 'results' / 'statistics' / f'{args.model}_pair_combo_distribution.csv'
+    out_path = REPO_ROOT / 'results' / 'tables' / f'{args.model}_pair_combo_distribution.csv'
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
     rows = []

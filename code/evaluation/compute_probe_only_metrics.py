@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""TS0/NEW probe-only metrics from selected configs; writes final_test_metrics.csv and final_new_metrics.csv."""
+"""TS0/NEW probe-only metrics from selected configs; writes final_test_metrics.csv and final_new_metrics.csv.
+
+With --per-sequence, also writes results/per_sequence/probe_only_ts0_per_sequence.csv and probe_only_new_per_sequence.csv."""
 
 import argparse
 import ast
@@ -99,6 +101,10 @@ def main():
                     help='ts0: only TS0; new: only NEW (loads TS0 from existing CSV); both: both (default)')
     ap.add_argument('--resume', action='store_true',
                     help='Load existing CSVs, skip (model,partition) already done, compute only missing. Use with --models to limit scope.')
+    ap.add_argument('--per-sequence', action='store_true',
+                    help='Write probe_only_ts0_per_sequence.csv and probe_only_new_per_sequence.csv (one row per seq per model).')
+    ap.add_argument('--per-sequence-dir', default=None,
+                    help='Directory for per-sequence CSVs (default: REPO_ROOT/results/per_sequence)')
     args = ap.parse_args()
 
     # Load config
@@ -146,6 +152,9 @@ def main():
 
     log(f"TS0: {len(ts0_ids)} sequences, NEW: {len(new_ids)} sequences")
     log(f"Progress log: {progress_log} (tail -f to monitor)")
+
+    per_seq_ts0 = []
+    per_seq_new = []
 
     fieldnames = ['model', 'layer', 'k', 'seed', 'threshold', 'decoding_mode', 'precision', 'recall', 'f1', 'TP', 'FP', 'FN', 'canonical_rate']
 
@@ -257,6 +266,25 @@ def main():
                         cr_sum += res['canonical_rate'] * pred_count
                         cr_denom += pred_count
                     n_ts0 += 1
+                    if args.per_sequence:
+                        cr = res['canonical_rate']
+                        per_seq_ts0.append({
+                            'seq_id': seq_id,
+                            'length': len(seq),
+                            'precision': res['precision'],
+                            'recall': res['recall'],
+                            'f1': res['f1'],
+                            'TP': res['TP'],
+                            'FP': res['FP'],
+                            'FN': res['FN'],
+                            'canonical_rate': '' if (cr is not None and np.isnan(cr)) else cr,
+                            'model': model,
+                            'layer': cfg['layer'],
+                            'k': cfg['k'],
+                            'seed': 42,
+                            'threshold': thresh,
+                            'decoding_mode': decoding_mode,
+                        })
                 if (idx + 1) % 300 == 0:
                     log(f"{model} TS0: {idx+1}/{len(ts0_ids)}")
             if n_ts0 > 0:
@@ -292,6 +320,25 @@ def main():
                         cr_sum += res['canonical_rate'] * pred_count
                         cr_denom += pred_count
                     n_new += 1
+                    if args.per_sequence:
+                        cr = res['canonical_rate']
+                        per_seq_new.append({
+                            'seq_id': seq_id,
+                            'length': len(seq),
+                            'precision': res['precision'],
+                            'recall': res['recall'],
+                            'f1': res['f1'],
+                            'TP': res['TP'],
+                            'FP': res['FP'],
+                            'FN': res['FN'],
+                            'canonical_rate': '' if (cr is not None and np.isnan(cr)) else cr,
+                            'model': model,
+                            'layer': cfg['layer'],
+                            'k': cfg['k'],
+                            'seed': 42,
+                            'threshold': thresh,
+                            'decoding_mode': decoding_mode,
+                        })
                 if (idx + 1) % 500 == 0:
                     log(f"{model} NEW: {idx+1}/{len(new_ids)}")
             if n_new > 0:
@@ -305,6 +352,24 @@ def main():
                 })
                 log(f"{model} NEW: F1={f1:.4f} (n={n_new})")
         write_partial_csv()
+
+    if args.per_sequence:
+        ps_dir = Path(args.per_sequence_dir) if args.per_sequence_dir else REPO_ROOT / 'results' / 'per_sequence'
+        ps_dir.mkdir(parents=True, exist_ok=True)
+        ps_fields = [
+            'seq_id', 'length', 'precision', 'recall', 'f1', 'TP', 'FP', 'FN', 'canonical_rate',
+            'model', 'layer', 'k', 'seed', 'threshold', 'decoding_mode',
+        ]
+        for fname, rows in [
+            ('probe_only_ts0_per_sequence.csv', per_seq_ts0),
+            ('probe_only_new_per_sequence.csv', per_seq_new),
+        ]:
+            p = ps_dir / fname
+            with open(p, 'w', newline='') as f:
+                w = csv.DictWriter(f, fieldnames=ps_fields)
+                w.writeheader()
+                w.writerows(rows)
+            log(f"per-sequence: {p} ({len(rows)} rows)")
 
     log(f"Done. Wrote {out_dir / 'final_test_metrics.csv'} and {out_dir / 'final_new_metrics.csv'}")
 

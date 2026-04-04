@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Like compute_feb8_probe_only_metrics but adds canonical_rate_wobble → *_wobble.csv side files."""
+"""Like compute_probe_only_metrics but adds canonical_rate_wobble → *_wobble.csv side files."""
 
 import argparse
 import ast

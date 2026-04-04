@@ -59,19 +59,19 @@ def main():
     REPO_ROOT = Path(__file__).resolve().parents[2]
     folding = REPO_ROOT / 'results' / 'folding'
 
-    # Val: feb23 feb8 config (complete)
-    val_v = folding / 'results_vl0_feb8'
-    val_c = folding / 'results_vl0_contrafold_feb8'
+    # VL0 validation sweep results
+    val_v = folding / 'results_vl0'
+    val_c = folding / 'results_vl0_contrafold'
     best_v, a0_v = get_best_alpha_and_a0(val_v)
     best_c, a0_c = get_best_alpha_and_a0(val_c)
 
-    # TS0, NEW: feb8 (jan22 config, no rnabert)
+    # TS0, NEW held-out evaluation
     ts0_v = folding / 'results_ts0'
     ts0_c = folding / 'results_ts0_contrafold'
     new_v = folding / 'results_new'
     new_c = folding / 'results_new_contrafold'
 
-    models_ts0_new = [m for m in models if m != 'rnabert']  # feb8 TS0/NEW no rnabert
+    models_ts0_new = [m for m in models if m != 'rnabert']  # TS0/NEW excludes rnabert
 
     print("=" * 80)
     print("CPLfold Val: Alpha=0 vs Optimal Alpha")
@@ -98,7 +98,7 @@ def main():
     print()
     print("=" * 80)
     print("TS0 / NEW: Results at the validation-selected optimal alpha")
-    print("(Val optimal alpha from feb23 VL0; TS0/NEW from feb8)")
+    print("(Val optimal alpha from VL0; TS0/NEW held-out evaluation)")
     print("=" * 80)
     print()
     print("| Model | Backend | Val best α | TS0 F1 | NEW F1 |")

@@ -8,7 +8,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 EMB="${EMBEDDINGS_BASE:-$REPO_ROOT/data/embeddings}"
 CKPT="${CHECKPOINT_BASE:-$REPO_ROOT/results/outputs}"
 
-exec conda run -n rna_probe python "$REPO_ROOT/code/evaluation/compute_feb8_probe_only_metrics.py" \
+exec conda run -n rna_probe python "$REPO_ROOT/code/evaluation/compute_probe_only_metrics.py" \
   --config-csv "$REPO_ROOT/configs/final_selected_config_unconstrained.csv" \
   --embeddings-base "$EMB" \
   --checkpoint-base "$CKPT" \

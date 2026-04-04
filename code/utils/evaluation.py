@@ -1,5 +1,5 @@
 """Metrics, pair extraction, and plots for probe/CPLfold evaluation."""
-from typing import Optional, List
+from typing import Optional, List, Tuple
 
 import torch
 import numpy as np
@@ -102,40 +102,6 @@ def compute_pair_metrics(
         return TP, FP, FN, canonical_rate
 
     return TP, FP, FN
-
-
-# def compute_pair_metrics(
-#     values: torch.Tensor,
-#     contact_map: torch.Tensor,
-#     threshold: float = 0.0,
-# ) -> Tuple[int, int, int]:
-#     """
-#     Compute TP, FP, FN from a SINGLE sequence using a positive-centric view.
-
-#     This version:
-#       * converts logits into a set of predicted positive pairs (i, j)
-#       * converts the gold contact map into a set of true positive pairs (i, j)
-#       * computes TP, FP, FN from these two sets
-
-#     It does NOT iterate over every negative cell in the full L x L matrix.
-#     """
-#     # 1) Convert to pair lists (1-based, i < j only)
-#     pred_pairs = prob_to_pairs(values, threshold=threshold)
-#     true_pairs = contact_to_pairs(contact_map) # only the true positive pairs
-
-#     # 2) Use sets for strict matching (no shift tolerance)
-#     pred_set = set(pred_pairs)
-#     true_set = set(true_pairs)
-
-#     # True positives: predicted and gold
-#     TP = len(pred_set & true_set)
-#     # False positives: predicted but not in gold
-#     FP = len(pred_set - true_set)
-#     # False negatives: gold but not predicted
-#     FN = len(true_set - pred_set)
-
-#     return TP, FP, FN
-
 
 
 def precision_recall_f1(TP: int, FP: int, FN: int):

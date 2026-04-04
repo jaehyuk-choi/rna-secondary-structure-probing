@@ -39,8 +39,8 @@ VAL_OPT = {
     ('rnabert','Vienna'):0.14, ('rnabert','Contrafold'):0.56,
 }
 
-FEB25 = REPO_ROOT / 'results' / 'folding'
-FEB8 = {
+FOLDING_RESULTS = REPO_ROOT / 'results' / 'folding'
+BASELINE_DIRS = {
     'ts0_vienna': REPO_ROOT / 'results' / 'sweeps' / 'results_ts0',
     'ts0_contrafold': REPO_ROOT / 'results' / 'sweeps' / 'results_ts0_contrafold',
     'new_vienna': REPO_ROOT / 'results' / 'sweeps' / 'results_new',
@@ -67,9 +67,9 @@ print("="*90)
 for pkey, pname in partitions:
     print(f"\n### {pname} ###")
     backend = 'Vienna' if 'vienna' in pkey else 'Contrafold'
-    feb8_dir = FEB8.get(pkey)
+    baseline_dir = BASELINE_DIRS.get(pkey)
 
-    f1_0_ref = load_seq_level(feb8_dir / f'detailed_results_{ALPHA0_REF_MODEL}.csv', 0.0) if feb8_dir else {}
+    f1_0_ref = load_seq_level(baseline_dir / f'detailed_results_{ALPHA0_REF_MODEL}.csv', 0.0) if baseline_dir else {}
     mean_alpha0_partition = np.mean(list(f1_0_ref.values())) if f1_0_ref else float('nan')
 
     print(f"{'partition':<18} {'model':<10} {'mean(α=0)':<10} {'mean(best)':<10} {'best_α':<8} {'%Δ':<10} {'p<0.001':<8} {'p<0.005':<8} {'p<0.01':<8} {'p_ttest':<12} {'p_wilcoxon':<12}")
@@ -77,11 +77,11 @@ for pkey, pname in partitions:
 
     for m in models:
         opt_alpha = VAL_OPT.get((m, backend))
-        d25 = load_seq_level_any(FEB25 / pkey / f'detailed_results_{m}.csv')
+        d25 = load_seq_level_any(FOLDING_RESULTS / pkey / f'detailed_results_{m}.csv')
         if m == 'rnabert':
             d0 = f1_0_ref
         else:
-            d0 = load_seq_level(feb8_dir / f'detailed_results_{m}.csv', 0.0) if feb8_dir else {}
+            d0 = load_seq_level(baseline_dir / f'detailed_results_{m}.csv', 0.0) if baseline_dir else {}
 
         common = sorted(set(d0.keys()) & set(d25.keys()))
         if not common:
@@ -120,7 +120,7 @@ print("\n" + "="*120)
 print("paired t-test / Wilcoxon, common seq_ids")
 print("="*120)
 
-out_path = REPO_ROOT / 'results' / 'statistics' / 'alpha0_vs_best_full.csv'
+out_path = REPO_ROOT / 'results' / 'folding' / 'alpha0_vs_best_full.csv'
 with open(out_path, 'w', newline='') as f:
     w = csv.writer(f, delimiter='\t')
     w.writerow(['partition', 'model', 'mean(α=0)', 'mean(best)', 'best_α', '%Δ', 'p<0.001', 'p<0.005', 'p<0.01', 'p_ttest', 'p_wilcoxon'])

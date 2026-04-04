@@ -47,7 +47,7 @@ def parse_base_pairs(base_pairs_str):
                 i, j = int(pair[0]), int(pair[1])
                 pairs.append((min(i, j), max(i, j)))
         return sorted(pairs)
-    except:
+    except Exception:
         return []
 
 

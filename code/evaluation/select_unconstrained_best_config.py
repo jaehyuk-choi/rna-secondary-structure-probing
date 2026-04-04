@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Pick best (layer,k,τ) from val unconstrained sweeps; writes config CSV and runs feb8 probe metrics."""
+"""Pick best (layer,k,τ) from val unconstrained sweeps; writes config CSV and runs probe-only metrics."""
 
 import csv
 import subprocess
@@ -71,7 +71,7 @@ def select_unconstrained_best_config():
 
 
 def write_config_csv(best_per_model: dict, out_path: Path):
-    """Write config CSV for compute_feb8_probe_only_metrics."""
+    """Write config CSV for compute_probe_only_metrics."""
     with open(out_path, 'w', newline='') as f:
         w = csv.DictWriter(f, fieldnames=[
             'model', 'selected_layer', 'selected_k', 'selected_seed',
@@ -91,8 +91,8 @@ def write_config_csv(best_per_model: dict, out_path: Path):
 
 
 def run_probe_only_metrics(config_csv: Path, output_dir: Path):
-    """Run compute_feb8_probe_only_metrics with custom config."""
-    script = REPO_ROOT / 'code' / 'evaluation' / 'compute_feb8_probe_only_metrics.py'
+    """Run compute_probe_only_metrics with custom config."""
+    script = REPO_ROOT / 'code' / 'evaluation' / 'compute_probe_only_metrics.py'
     cmd = [
         sys.executable, str(script),
         '--config-csv', str(config_csv),
@@ -121,7 +121,7 @@ def main():
     print(f"\nWrote config: {config_csv}")
 
     print("\n" + "=" * 60)
-    print("compute_feb8_probe_only_metrics (TS0/NEW)")
+    print("compute_probe_only_metrics (TS0/NEW)")
     print("=" * 60)
     run_probe_only_metrics(config_csv, output_dir)
 
