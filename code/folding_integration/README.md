@@ -1,6 +1,8 @@
 # CPLfold_inter
 
-RNA secondary structure prediction tool based on LinearFold algorithm with base pair bonus matrix support.
+RNA secondary structure prediction tool based on the LinearFold algorithm with base pair bonus matrix support.
+
+Original implementation by Ke Wang: [Vicky-0256/CPLfold](https://github.com/Vicky-0256/CPLfold/tree/main)
 
 ## Installation
 

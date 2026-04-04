@@ -38,7 +38,6 @@ This repository investigates whether pretrained RNA foundation models encode bas
 │   └── statistics/          Significance test outputs
 ├── figures/                 Generated dissertation figures (main + appendix)
 ├── external/                Upstream model repos and checkpoints (not committed)
-├── docs/                    Detailed embedding pipeline documentation
 ├── dissertation/            LaTeX source (skeleton.tex)
 ├── scripts/                 External repo setup and validation helpers
 └── requirements.txt         Python dependencies
@@ -137,7 +136,7 @@ This repository contains all source code, configuration files, pre-computed resu
 
 | Artefact | Expected location | How to regenerate |
 |----------|------------------|-------------------|
-| Per-layer embeddings | `data/embeddings/{MODEL}/bpRNA/by_layer/layer_{N}/{id}.npy` | See [docs/EMBEDDINGS.md](docs/EMBEDDINGS.md) |
+| Per-layer embeddings | `data/embeddings/{MODEL}/bpRNA/by_layer/layer_{N}/{id}.npy` | See [code/embeddings/README.md](code/embeddings/README.md) |
 | Contact maps | `data/contact_maps/bpRNA/{id}_contact.npy` | `python code/preprocessing/compute_structure_features.py` |
 | Trained checkpoints | `results/outputs/{model}/layer_*/k_*/seed_*/best.pt` | `bash code/probe_training/run_all_experiments.sh` |
 | Per-model CPLfold detailed results | `results/folding/{subdir}/detailed_results_{model}.csv` | `python code/folding_integration/run_cplfold_exp.py` |
@@ -162,7 +161,7 @@ bash scripts/check_external_assets.sh
 | RoBERTa | Hugging Face (`roberta-base`) | Downloaded automatically |
 | One-hot | — | — |
 
-See [docs/EMBEDDINGS.md](docs/EMBEDDINGS.md) for detailed model-by-model extraction instructions.
+See [code/embeddings/README.md](code/embeddings/README.md) for detailed model-by-model extraction instructions.
 
 ### Generate embeddings
 
