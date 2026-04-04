@@ -7,5 +7,6 @@ matplotlib
 h5py
 scipy
 numba
+transformers>=4.0
 # Optional: ViennaRNA Python bindings (for folding integration)
 # Install via conda: conda install -c bioconda viennarna

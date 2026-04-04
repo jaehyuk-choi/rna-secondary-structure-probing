@@ -1,0 +1,57 @@
+{
+  "generated_on": "2026-04-04",
+  "repos": [
+    {
+      "name": "RNA-FM",
+      "local_path": "external/RNA-FM",
+      "url": "https://github.com/ml4bio/RNA-FM.git",
+      "default_branch": "main",
+      "pinned_commit": "348951516e0963d22bbb33b3c9fc18c89081d38e",
+      "required_paths": [
+        "external/RNA-FM",
+        "external/RNA-FM/RNA-FM_pretrained.pth"
+      ],
+      "weights_note": "Download the pretrained .pth file using the upstream RNA-FM README instructions."
+    },
+    {
+      "name": "ERNIE-RNA",
+      "local_path": "external/ERNIE-RNA",
+      "url": "https://github.com/Bruce-ywj/ERNIE-RNA.git",
+      "default_branch": "main",
+      "pinned_commit": "43bc06de1088ed03ffd7de918ad4b2c2a3346a43",
+      "required_paths": [
+        "external/ERNIE-RNA",
+        "external/ERNIE-RNA/checkpoint/ERNIE-RNA_checkpoint/ERNIE-RNA_pretrain.pt",
+        "external/ERNIE-RNA/src/dict"
+      ],
+      "weights_note": "The repository contains the expected checkpoint layout in checkpoint/. Verify that ERNIE-RNA_pretrain.pt is present after clone."
+    },
+    {
+      "name": "RNABERT",
+      "local_path": "external/RNABERT",
+      "url": "https://github.com/mana438/RNABERT.git",
+      "default_branch": "master",
+      "pinned_commit": "1aeebcb2823bc34fc37f6527d63fca06917e3919",
+      "required_paths": [
+        "external/RNABERT",
+        "external/RNABERT/MLM_SFP.py",
+        "external/RNABERT/bert_mul_2.pth",
+        "external/RNABERT/RNA_bert_config.json"
+      ],
+      "weights_note": "Download the pretrained RNABERT weights from the Google Drive link referenced in the upstream README."
+    },
+    {
+      "name": "RiNALMo",
+      "local_path": "external/RiNALMo",
+      "url": "https://github.com/lbcb-sci/RiNALMo.git",
+      "default_branch": "main",
+      "pinned_commit": "2c2c5c14a5ae609d8c560a5d9ca32e51e0288955",
+      "required_paths": [
+        "external/RiNALMo",
+        "external/RiNALMo/weights/rinalmo_giga_pretrained.pt"
+      ],
+      "weights_note": "The upstream README provides a direct Zenodo download for rinalmo_giga_pretrained.pt."
+    }
+  ]
+}
+

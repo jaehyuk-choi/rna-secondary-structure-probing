@@ -63,6 +63,7 @@ graph TD
 | Task | Code | Key inputs | Key outputs |
 |------|------|-----------|-------------|
 | **Probe model** | `code/models/bilinear_probe_model.py` | — | `BilinearContactProbe` class |
+| **Embedding extraction** | `code/embeddings/generate_embeddings.py` | `data/metadata/*.csv`, external model repos | `data/embeddings/{MODEL}/{DATASET}/by_layer/layer_*/` |
 | **Training** | `code/probe_training/train_probe_automated.py` | Embeddings, contact maps | `results/outputs/{model}/layer_*/k_*/seed_*/best.pt` |
 | **Slurm training** | `code/probe_training/sbatch_train_model.sh` | Model name | All (layer, k) checkpoints for one model |
 | **Full pipeline** | `code/probe_training/run_all_experiments.sh` | — | All training + downstream jobs |
@@ -113,6 +114,21 @@ graph TD
 | Trained checkpoints | `results/outputs/{model}/layer_*/k_*/seed_*/best.pt` |
 
 Contact maps can be regenerated: `python code/preprocessing/compute_structure_features.py`
+
+Embeddings can be regenerated from the metadata tables in this repository. See [docs/EMBEDDINGS.md](/lus/lfs1aip2/projects/u6cg/jay/dissertation_submission_claude/docs/EMBEDDINGS.md) for model-specific commands and external dependencies.
+
+To prepare the upstream model repositories under `external/`:
+
+```bash
+bash scripts/setup_external_repos.sh
+bash scripts/check_external_assets.sh
+```
+
+Minimal example:
+
+```bash
+python code/embeddings/generate_embeddings.py onehot --dataset bpRNA
+```
 
 ### Train a single probe
 

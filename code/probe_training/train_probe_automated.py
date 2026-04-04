@@ -22,7 +22,7 @@ from tqdm import tqdm
 from models.bilinear_probe_model import BilinearContactProbe, StructuralContactProbe
 from dataset_probe import RNABasepairDataset, rna_collate_fn
 from utils.evaluation import compute_pair_metrics, precision_recall_f1
-from experiment_config import ExperimentConfig, ROOT
+from experiment_config import ExperimentConfig, MODEL_CONFIGS, ROOT
 
 # ============================================================
 # Configuration
@@ -132,25 +132,9 @@ def filter_ids_by_embedding(ids: List[str], embedding_dir: str, embedding_suffix
 
 
 def get_embedding_dir(model: str, layer: int) -> str:
-    base_dir = os.path.join(ROOT, "data", "embeddings")
-    dataset_name = "bpRNA"
-
-    dir_map = {
-        "rnabert":  ("RNABERT",  "ArchiveII"),
-        "ernie":    ("RNAErnie", "ArchiveII"),
-        "rnafm":    ("RNAFM",    "ArchiveII"),
-        "rinalmo":  ("RiNALMo",  "bpRNA"),
-        "roberta":  ("RoBERTa",  "bpRNA"),
-        "onehot":   ("Onehot",   "bpRNA"),
-    }
-
-    if model not in dir_map:
+    if model not in MODEL_CONFIGS:
         raise ValueError(f"Unknown model: {model}")
-
-    primary_name, fallback_dataset = dir_map[model]
-    candidate = os.path.join(base_dir, primary_name, dataset_name, "by_layer", f"layer_{layer}")
-    fallback = os.path.join(base_dir, primary_name, fallback_dataset, "by_layer", f"layer_{layer}")
-    return candidate if os.path.isdir(candidate) else fallback
+    return os.path.join(MODEL_CONFIGS[model]["base_path"], f"layer_{layer}")
 
 
 def train_probe(
