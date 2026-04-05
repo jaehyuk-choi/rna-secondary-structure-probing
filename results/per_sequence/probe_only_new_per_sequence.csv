@@ -1,0 +1,1 @@
+seq_id,length,precision,recall,f1,TP,FP,FN,canonical_rate,model,layer,k,seed,threshold,decoding_mode
