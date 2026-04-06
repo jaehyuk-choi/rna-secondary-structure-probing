@@ -43,6 +43,31 @@ This repository investigates whether pretrained RNA foundation models encode bas
 └── requirements.txt         Python dependencies
 ```
 
+## Key Results
+
+### Probe-Only F1 (Unconstrained Decoding)
+
+| Model | Layer | k | TS0 F1 | NEW F1 |
+|-------|-------|---|--------|--------|
+| ERNIE-RNA | 11 | 32 | 0.437 | 0.404 |
+| RNA-FM | 11 | 32 | 0.139 | 0.103 |
+| RoBERTa | 11 | 32 | 0.098 | 0.114 |
+| RiNALMo | 10 | 32 | 0.016 | 0.024 |
+| RNABERT | 0 | 128 | 0.026 | 0.026 |
+| One-hot | 0 | 128 | 0.008 | 0.013 |
+
+ERNIE-RNA achieves the highest probe-only F1 on both test sets. RoBERTa is the only model where NEW F1 exceeds TS0 F1, indicating stronger generalisation to unseen RNA families. RoBERTa significantly outperforms all models except ERNIE-RNA (Wilcoxon p < 0.001).
+
+### CPLfold Integration (alpha=0 vs Best alpha)
+
+| Model | TS0 Vienna (alpha=0 / best) | TS0 CONTRAfold (alpha=0 / best) | NEW CONTRAfold (alpha=0 / best) |
+|-------|---------------------------|-------------------------------|-------------------------------|
+| ERNIE-RNA | 0.544 / 0.656 (+0.112) | 0.560 / 0.683 (+0.123) | 0.630 / 0.738 (+0.108) |
+| RNA-FM | 0.544 / 0.602 (+0.058) | 0.560 / 0.624 (+0.064) | 0.630 / 0.653 (+0.023) |
+| RoBERTa | 0.544 / 0.555 (+0.011) | 0.560 / 0.587 (+0.027) | 0.630 / 0.660 (+0.030) |
+
+Injecting probe scores as soft priors into CPLfold consistently improves structure prediction. ERNIE-RNA yields the largest absolute gain (+12.3% F1 on TS0 CONTRAfold).
+
 ## Probe Architecture
 
 The structural probe applies a low-rank bilinear projection to frozen per-residue embeddings:

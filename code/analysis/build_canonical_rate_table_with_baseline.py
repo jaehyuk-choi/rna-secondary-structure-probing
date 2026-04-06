@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""LaTeX-ish table: model canonical rates vs sequence-composition baseline (WC / WC+GU)."""
+"""CSV table: model canonical rates vs sequence-composition baseline (WC / WC+GU)."""
 
 import csv
 import subprocess
@@ -55,31 +55,7 @@ def main():
         w.writeheader()
         w.writerows(rows)
 
-    # LaTeX table
-    out_tex = REPO_ROOT / 'results' / 'tables' / 'canonical_rate_table_with_baseline.tex'
-    with open(out_tex, 'w') as f:
-        f.write(r"""\begin{table*}[t]
-\centering
-\caption{Canonical base-pair rate (\% of predicted pairs that are Watson--Crick or GU wobble) under unconstrained decoding. Baseline: proportion of WC/WC+GU among all candidate pairs $(i<j)$ in the data.}
-\label{tab:canonical_ts_new}
-\begin{tabular}{lcccc}
-\toprule
-& \multicolumn{2}{c}{TS0} & \multicolumn{2}{c}{NEW} \\
-\cmidrule(lr){2-3} \cmidrule(lr){4-5}
-Model & WC & WC+GU & WC & WC+GU \\
-\midrule
-""")
-        for r in rows:
-            # LaTeX: % -> \%
-            def tex_pct(s): return s.replace('%', r'\%')
-            f.write(f"{r['model']} & {tex_pct(r['ts0_wc'])} & {tex_pct(r['ts0_wc_gu'])} & {tex_pct(r['new_wc'])} & {tex_pct(r['new_wc_gu'])} \\\\\n")
-        f.write(r"""\bottomrule
-\end{tabular}
-\end{table*}
-""")
-
     print(f"Saved {out_csv}")
-    print(f"Saved {out_tex}")
     print("\n--- Table ---")
     for r in rows:
         print(f"  {r['model']:25} | TS0: {r['ts0_wc']:>6} {r['ts0_wc_gu']:>6} | NEW: {r['new_wc']:>6} {r['new_wc_gu']:>6}")
