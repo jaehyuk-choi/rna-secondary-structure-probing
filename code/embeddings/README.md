@@ -391,13 +391,6 @@ Procedure:
 7. Validate that the parsed array has shape `(num_hidden_layers, seq_len, 120)`
 8. Save each layer to `layer_<N>/<seq_id>.npy`
 
-Long-sequence handling:
-
-- if sequence length is below `440`, RNABERT runs once
-- if sequence length is `>= 440`, the sequence is split into two overlapping fragments
-- both fragments are processed independently
-- the two embedding blocks are merged with the original split-and-merge rule used in the older codebase
-
 Error handling:
 
 - failures can be written to a CSV with `--error-log`

@@ -43,32 +43,6 @@ This repository investigates whether pretrained RNA foundation models encode bas
 └── requirements.txt         Python dependencies
 ```
 
-## Pipeline
-
-```mermaid
-graph TD
-    A[bpRNA metadata + splits] --> B[Contact maps]
-    E[Pretrained FM embeddings] --> C
-
-    B --> C[Probe training<br/>train_probe_automated.py]
-    C --> D[Trained checkpoints<br/>results/outputs/]
-
-    D --> F[Probe inference<br/>generate_base_pairs.py]
-    F --> G[Probe-only evaluation<br/>compute_probe_only_metrics.py]
-    G --> H[results/metrics/]
-
-    D --> I[VL0 config selection<br/>select_unconstrained_best_config.py]
-    I --> J[configs/]
-
-    F --> K[CPLfold integration<br/>run_cplfold_exp.py + CPLfold_inter.py]
-    K --> L[Alpha sweep on VL0]
-    L --> M[TS0/NEW evaluation<br/>results/folding/]
-
-    H --> N[Analysis + plotting]
-    M --> N
-    N --> O[figures/ + results/tables/]
-```
-
 ## Probe Architecture
 
 The structural probe applies a low-rank bilinear projection to frozen per-residue embeddings:
