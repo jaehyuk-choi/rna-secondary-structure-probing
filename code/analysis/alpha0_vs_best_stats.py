@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Paired α=0 vs best-α F1 (t-test / Wilcoxon). RNABERT at α=0 borrows ERNIE seq scores (bonus off)."""
+"""Paired α=0 vs best-α F1 (t-test). RNABERT at α=0 borrows ERNIE seq scores (bonus off)."""
 import csv
 from pathlib import Path
 import numpy as np
@@ -72,8 +72,8 @@ for pkey, pname in partitions:
     f1_0_ref = load_seq_level(baseline_dir / f'detailed_results_{ALPHA0_REF_MODEL}.csv', 0.0) if baseline_dir else {}
     mean_alpha0_partition = np.mean(list(f1_0_ref.values())) if f1_0_ref else float('nan')
 
-    print(f"{'partition':<18} {'model':<10} {'mean(α=0)':<10} {'mean(best)':<10} {'best_α':<8} {'%Δ':<10} {'p<0.001':<8} {'p<0.005':<8} {'p<0.01':<8} {'p_ttest':<12} {'p_wilcoxon':<12}")
-    print("-"*120)
+    print(f"{'partition':<18} {'model':<10} {'mean(α=0)':<10} {'mean(best)':<10} {'best_α':<8} {'%Δ':<10} {'p<0.001':<8} {'p<0.005':<8} {'p<0.01':<8} {'p_ttest':<12}")
+    print("-"*110)
 
     for m in models:
         opt_alpha = VAL_OPT.get((m, backend))
@@ -100,29 +100,24 @@ for pkey, pname in partitions:
                 _, p_ttest = stats.ttest_rel(arr_best, arr_0)
             except Exception:
                 p_ttest = np.nan
-            try:
-                _, p_wilcoxon = stats.wilcoxon(arr_best, arr_0)
-            except Exception:
-                p_wilcoxon = np.nan
             s001 = "✓" if not np.isnan(p_ttest) and p_ttest < 0.001 else ""
             s005 = "✓" if not np.isnan(p_ttest) and p_ttest < 0.005 else ""
             s01 = "✓" if not np.isnan(p_ttest) and p_ttest < 0.01 else "n.s." if np.isnan(p_ttest) else "n.s."
             if not np.isnan(p_ttest) and p_ttest >= 0.01: s01 = "n.s."
             p_t_str = f"{p_ttest:.2e}" if not np.isnan(p_ttest) else "nan"
-            p_w_str = f"{p_wilcoxon:.2e}" if not np.isnan(p_wilcoxon) else "nan"
-            print(f"{pname:<18} {m:<10} {mean_0:.4f}     {mean_best:.4f}     {opt_alpha:<8.2f} {pct:+.1f}%      {s001:<8} {s005:<8} {s01:<8} {p_t_str:<12} {p_w_str:<12}")
-            csv_rows.append([pname, m, f"{mean_0:.4f}", f"{mean_best:.4f}", f"{opt_alpha:.2f}", f"{pct:+.1f}%", s001 or "", s005 or "", s01, p_t_str, p_w_str])
+            print(f"{pname:<18} {m:<10} {mean_0:.4f}     {mean_best:.4f}     {opt_alpha:<8.2f} {pct:+.1f}%      {s001:<8} {s005:<8} {s01:<8} {p_t_str:<12}")
+            csv_rows.append([pname, m, f"{mean_0:.4f}", f"{mean_best:.4f}", f"{opt_alpha:.2f}", f"{pct:+.1f}%", s001 or "", s005 or "", s01, p_t_str])
         else:
-            print(f"{pname:<18} {m:<10} {mean_0:.4f}     {mean_best:.4f}     {opt_alpha:<8.2f} {pct:+.1f}%      (no scipy)    (no scipy)    -")
-            csv_rows.append([pname, m, f"{mean_0:.4f}", f"{mean_best:.4f}", f"{opt_alpha:.2f}", f"{pct:+.1f}%", "", "", "-", "-", "-"])
+            print(f"{pname:<18} {m:<10} {mean_0:.4f}     {mean_best:.4f}     {opt_alpha:<8.2f} {pct:+.1f}%      (no scipy)    -")
+            csv_rows.append([pname, m, f"{mean_0:.4f}", f"{mean_best:.4f}", f"{opt_alpha:.2f}", f"{pct:+.1f}%", "", "", "-", "-"])
 
-print("\n" + "="*120)
-print("paired t-test / Wilcoxon, common seq_ids")
-print("="*120)
+print("\n" + "="*110)
+print("paired t-test, common seq_ids")
+print("="*110)
 
 out_path = REPO_ROOT / 'results' / 'folding' / 'alpha0_vs_best_full.csv'
 with open(out_path, 'w', newline='') as f:
     w = csv.writer(f, delimiter='\t')
-    w.writerow(['partition', 'model', 'mean(α=0)', 'mean(best)', 'best_α', '%Δ', 'p<0.001', 'p<0.005', 'p<0.01', 'p_ttest', 'p_wilcoxon'])
+    w.writerow(['partition', 'model', 'mean(α=0)', 'mean(best)', 'best_α', '%Δ', 'p<0.001', 'p<0.005', 'p<0.01', 'p_ttest'])
     w.writerows(csv_rows)
 print(f"\nWrote {out_path}")

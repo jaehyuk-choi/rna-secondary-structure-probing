@@ -45,18 +45,34 @@ This repository investigates whether pretrained RNA foundation models encode bas
 
 ## Key Results
 
-### Probe-Only F1 (Unconstrained Decoding)
+### Validation-Selected Best Configurations
 
-| Model | Layer | k | TS0 F1 | NEW F1 |
-|-------|-------|---|--------|--------|
-| ERNIE-RNA | 11 | 32 | 0.437 | 0.404 |
-| RNA-FM | 11 | 32 | 0.139 | 0.103 |
-| RoBERTa | 11 | 32 | 0.098 | 0.114 |
-| RiNALMo | 10 | 32 | 0.016 | 0.024 |
-| RNABERT | 0 | 128 | 0.026 | 0.026 |
-| One-hot | 0 | 128 | 0.008 | 0.013 |
+Hyperparameters (layer, k, decoding mode, threshold) were selected on VL0 to maximise F1, then evaluated on held-out TS0 and NEW.
 
-ERNIE-RNA achieves the highest probe-only F1 on both test sets. RoBERTa is the only model where NEW F1 exceeds TS0 F1, indicating stronger generalisation to unseen RNA families. RoBERTa significantly outperforms all models except ERNIE-RNA (Wilcoxon p < 0.001).
+| Model | Decoding | Layer | k | Threshold | TS0 F1 | NEW F1 |
+|-------|----------|-------|---|-----------|--------|--------|
+| ERNIE-RNA | canonical+wobble | 11 | 32 | 0.90 | 0.511 | 0.458 |
+| RoBERTa | canonical+wobble | 9 | 64 | 0.90 | 0.179 | 0.187 |
+| RNA-FM | unconstrained | 11 | 32 | 0.90 | 0.139 | 0.104 |
+| RiNALMo | canonical-only | 33 | 64 | 0.65 | 0.048 | 0.052 |
+| One-hot | canonical-only | 0 | 32 | 0.70 | 0.035 | 0.048 |
+| RNABERT | unconstrained | 0 | 128 | 0.65 | 0.026 | 0.026 |
+
+ERNIE-RNA achieves the highest probe-only F1 on both test sets. RoBERTa is the only model where NEW F1 exceeds TS0 F1, indicating stronger generalisation to unseen RNA families. Canonical+wobble decoding substantially improves ERNIE-RNA (+0.074) and RoBERTa (+0.081) over unconstrained decoding.
+
+### Canonical Base-Pair Rate (Unconstrained Decoding)
+
+| Model | TS0 WC | TS0 WC+GU | NEW WC | NEW WC+GU |
+|-------|--------|-----------|--------|-----------|
+| ERNIE-RNA | 63.6% | 71.2% | 66.6% | 72.0% |
+| RNA-FM | 43.3% | 48.8% | 48.6% | 52.4% |
+| RoBERTa | 36.5% | 37.0% | 37.8% | 38.3% |
+| RNABERT | 34.0% | 34.2% | 33.8% | 34.0% |
+| RiNALMo | 12.0% | 12.0% | 13.0% | 13.0% |
+| One-hot | 2.0% | 2.0% | 2.5% | 2.5% |
+| Baseline (all pairs) | 25.4% | 37.7% | 25.7% | 38.1% |
+
+ERNIE-RNA predicts >70% canonical pairs (WC+GU), far above the sequence-composition baseline. One-hot and RiNALMo fall below baseline, confirming they fail to recover meaningful pairing structure.
 
 ### CPLfold Integration (alpha=0 vs Best alpha)
 
@@ -67,6 +83,14 @@ ERNIE-RNA achieves the highest probe-only F1 on both test sets. RoBERTa is the o
 | RoBERTa | 0.544 / 0.555 (+0.011) | 0.560 / 0.587 (+0.027) | 0.630 / 0.660 (+0.030) |
 
 Injecting probe scores as soft priors into CPLfold consistently improves structure prediction. ERNIE-RNA yields the largest absolute gain (+12.3% F1 on TS0 CONTRAfold).
+
+### Figures
+
+<p align="center">
+  <img src="figures/main/fig1_grouped_bar_f1.png" width="70%" alt="Probe-only F1 grouped bar chart" />
+</p>
+
+See `figures/main/` for all dissertation figures including layer-wise F1, alpha sweeps, contact heatmaps, and length-stratified analysis.
 
 ## Probe Architecture
 
@@ -99,7 +123,6 @@ Implementation: `code/models/bilinear_probe_model.py`
 | **CPLfold experiments** | `code/folding_integration/run_cplfold_exp.py` | Base pairs, configs | `results/folding/detailed_alpha_sweep_*.csv` |
 | **VL0 alpha sweep** | `code/probe_training/run_split_pipeline.py` | VL0 sequences, probe scores | `results/sweeps/vl0_alpha_sweep_both.csv` |
 | **Canonical rates** | `code/analysis/build_canonical_rate_table_with_baseline.py` | Wobble metrics, baseline | `results/tables/canonical_rate_table_with_baseline.csv` |
-| **RoBERTa stats** | `code/analysis/roberta_vs_others_statistical_test.py` | Per-sequence metrics | `results/statistics/roberta_vs_others_significance.csv` |
 | **Pair statistics** | `code/analysis/compute_pair_statistics.py` | bpRNA metadata, splits | `results/tables/pair_statistics_by_split.csv` |
 | **Figures** | `code/plotting/plot_*.py` | Various results CSVs | `figures/main/*.png`, `figures/appendix/*.png` |
 
@@ -114,7 +137,6 @@ Implementation: `code/models/bilinear_probe_model.py`
 | Table 9 — Probe-only F1 (best config) | `results/metrics/final_{test,new}_metrics.csv` |
 | Table 11 — Unconstrained vs best comparison | `results/metrics/probe_unconstrained_vs_best_comparison.csv` |
 | Table 12 — F1 by sequence length | `results/per_sequence/{ts,new}_per_sequence_metrics.csv` |
-| Table 13 — RoBERTa significance tests | `results/statistics/roberta_vs_others_significance.csv` |
 | Fig — α sweep (VL0) | `results/sweeps/vl0_alpha_sweep_both.csv` |
 | Fig — α=0 vs best α | `results/folding/alpha0_vs_best_full.csv` |
 | Fig — Layer-wise F1 | `results/sweeps/layer_wise_val_f1.csv` |

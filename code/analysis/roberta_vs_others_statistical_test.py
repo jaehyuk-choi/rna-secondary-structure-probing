@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Paired per-seq tests: RoBERTa vs each other model (best_config_val_f1 rows)."""
+"""Paired t-test: RoBERTa vs each other model (best_config_val_f1 rows)."""
 
 import csv
 from pathlib import Path
@@ -72,16 +72,12 @@ def paired_test(roberta_vals, other_vals):
     other_vals = np.array(other_vals)
     mean_diff = np.mean(roberta_vals - other_vals)
     if not HAS_SCIPY:
-        return mean_diff, float('nan'), float('nan')
-    try:
-        _, p_wilcoxon = stats.wilcoxon(roberta_vals, other_vals, alternative='greater')
-    except Exception:
-        p_wilcoxon = float('nan')
+        return mean_diff, float('nan')
     try:
         _, p_ttest = stats.ttest_rel(roberta_vals, other_vals, alternative='greater')
     except Exception:
         p_ttest = float('nan')
-    return mean_diff, p_wilcoxon, p_ttest
+    return mean_diff, p_ttest
 
 
 def sig_str(p):
@@ -122,22 +118,22 @@ def main():
             if len(roberta_vals) < 10:
                 rows.append({'partition': partition, 'comparison': f'RoBERTa vs {MODEL_LABELS[other]}',
                             'n': len(roberta_vals), 'mean_roberta': np.nan, 'mean_other': np.nan,
-                            'mean_diff': np.nan, 'p_wilcoxon': np.nan, 'p_ttest': np.nan, 'sig': ''})
+                            'mean_diff': np.nan, 'p_ttest': np.nan, 'sig': ''})
                 continue
-            mean_diff, p_wilcoxon, p_ttest = paired_test(roberta_vals, other_vals)
+            mean_diff, p_ttest = paired_test(roberta_vals, other_vals)
             rows.append({'partition': partition, 'comparison': f'RoBERTa vs {MODEL_LABELS[other]}',
                         'n': len(roberta_vals), 'mean_roberta': np.mean(roberta_vals),
                         'mean_other': np.mean(other_vals), 'mean_diff': mean_diff,
-                        'p_wilcoxon': p_wilcoxon, 'p_ttest': p_ttest, 'sig': sig_str(p_wilcoxon)})
+                        'p_ttest': p_ttest, 'sig': sig_str(p_ttest)})
 
     csv_path = OUT_DIR / 'roberta_vs_others_significance.csv'
-    fieldnames = ['partition', 'comparison', 'n', 'mean_roberta', 'mean_other', 'mean_diff', 'p_wilcoxon', 'p_ttest', 'sig']
+    fieldnames = ['partition', 'comparison', 'n', 'mean_roberta', 'mean_other', 'mean_diff', 'p_ttest', 'sig']
     with open(csv_path, 'w', newline='') as f:
         w = csv.DictWriter(f, fieldnames=fieldnames)
         w.writeheader()
         for r in rows:
             out = {k: r[k] for k in fieldnames}
-            for k in ['mean_roberta', 'mean_other', 'mean_diff', 'p_wilcoxon', 'p_ttest']:
+            for k in ['mean_roberta', 'mean_other', 'mean_diff', 'p_ttest']:
                 if isinstance(out[k], float) and not np.isnan(out[k]):
                     out[k] = f'{out[k]:.4f}'
             w.writerow(out)
@@ -145,15 +141,15 @@ def main():
 
     md_path = OUT_DIR / 'roberta_vs_others_significance.md'
     with open(md_path, 'w') as f:
-        f.write("# RoBERTa vs Others: Paired Statistical Test (Sequence-level F1)\n\n")
-        f.write("| Partition | Comparison | N | Mean RoBERTa | Mean Other | Δ | p (Wilcoxon) | Sig |\n")
-        f.write("|-----------|------------|---|--------------|------------|---|---------------|-----|\n")
+        f.write("# RoBERTa vs Others: Paired t-test (Sequence-level F1)\n\n")
+        f.write("| Partition | Comparison | N | Mean RoBERTa | Mean Other | Δ | p (t-test) | Sig |\n")
+        f.write("|-----------|------------|---|--------------|------------|---|------------|-----|\n")
         for r in rows:
             mr = f"{r['mean_roberta']:.4f}" if not np.isnan(r['mean_roberta']) else "-"
             mo = f"{r['mean_other']:.4f}" if not np.isnan(r['mean_other']) else "-"
             md = f"{r['mean_diff']:.4f}" if not np.isnan(r['mean_diff']) else "-"
-            pw = f"{r['p_wilcoxon']:.2e}" if not np.isnan(r['p_wilcoxon']) else "-"
-            f.write(f"| {r['partition']} | {r['comparison']} | {r['n']} | {mr} | {mo} | {md} | {pw} | {r['sig']} |\n")
+            pt = f"{r['p_ttest']:.2e}" if not np.isnan(r['p_ttest']) else "-"
+            f.write(f"| {r['partition']} | {r['comparison']} | {r['n']} | {mr} | {mo} | {md} | {pt} | {r['sig']} |\n")
     print(f"Saved {md_path}")
     print("Done.")
     return 0
